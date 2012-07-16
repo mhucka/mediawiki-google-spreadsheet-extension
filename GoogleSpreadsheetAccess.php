@@ -1,11 +1,29 @@
 <?php
+/**
+** ============================================================================
+** @file    GoogleSiteSearch.php
+** @brief   MediaWiki plug-in for accessing values in a Google Spreadsheet
+** @author  Michael Hucka (mhucka@caltech.edu), Caltech
+**
+** See http://mhucka.github.com/google-spreadsheet-mw-plugin for more info.
+**
+** This plug-in was developed as part of the SBML Project (http://sbml.org).
+** Copyright (C) 2012 by the California Institute of Technology, Pasadena, USA.
+**
+** This library is free software; you can redistribute it and/or modify it
+** under the terms of the GNU Lesser General Public License as published by
+** the Free Software Foundation.  A copy of the license agreement is provided
+** in the file named "LICENSE.txt" included with this software distribution
+** and also available online as http://sbml.org/software/libsbml/license.html
+** ============================================================================
+*/
 
 $wgExtensionFunctions[] = "wf_google_spreadsheet_include";
 $wgExtensionCredits['other'][] = array(
     'name'        => 'GoogleSpreadsheetAccess',
-    'author'      => 'Michael Hucka',
-    'url'         => 'foo',
-    'description' => 'Return content from a Google Spreadsheet.',
+    'author'      => 'Michael Hucka (mhucka@caltech.edu)',
+    'url'         => 'http://mhucka.github.com/google-spreadsheet-mw-plugin',
+    'description' => 'Return values from a Google Spreadsheet.',
 );
 
 function wf_google_spreadsheet_include() {
@@ -13,34 +31,53 @@ function wf_google_spreadsheet_include() {
     $wgParser->setHook( "gscellvalue", "render_gscellvalue" );
 }
 
+/*
+ * For security reasons, you must hard-code the spreadsheet key here, and
+ * use identifiers in the references in your wiki pages, rather than use
+ * the spreadsheet key directly in the wiki pages.  The format of the
+ * following array is:
+ *
+ *    "sheet name" => "Google key for spreadsheet"
+ *
+ * This indirection is for security reasons, to avoid wiki users being able
+ * to inject malicious content from arbitrary spreadsheets that they control.
+ */
+
 $sheet_ids = array(
     "SBMLLevel3Packages" => "0ApbKgxVhXxVydG15WXlIT0JacHhwc0FPemV6bE1aQXc",
 );
 
 /*
- * This is called automatically by the MediaWiki parser extension system.
- * It takes an argument that indicates how to look up a row based on an
- * exact column value string match, then once the row is found, the column
- * value (in that row) to be returned. 
+ * Function render_gscellvalue will be called automatically by the MediaWiki
+ * parser extension system.  It accepts arguments that indicate a row to find
+ * in the spreadsheet, and once the row is found, the column value in that
+ * row to be returned.  The approach is relatively simple and relies on one
+ * important assumptions about the spreadsheet: that the first row consists
+ * of column labels.  References to rows in this extension are to these row
+ * labels and NOT to the spreadsheet row ID's; this allows people to reorder
+ * the spreadsheet columns without affecting references in MediaWiki pages.
  *
- * <gscellvalue sheet="A" find="B" return="C">
+ * The syntax in MediaWiki markup is the following:
+ *
+ * <gscellvalue sheet="W" find="X" search="Y" return="Z" wikitext>
  *
  * where:
- *   A = identifier for the sheet (see below)
- *   B = exact string to look for in column 1 -- this finds a row
- *   D = column whose value from that row is to be returned
+ *   W = name for the sheet (see $sheet_ids above)
+ *   X = exact string to look for in column "Y", to find a row
+ *   Y = label (not ID) of the column in which to search for content "X"
+ *   Z = label (not ID) of the column whose value is to be returned
+ *   wikitext = (optional) keyword to indicate content is to be parsed
  *
  * The spreadsheet is identified by a name; this is mapped to an actual
- * Google spreadsheet key via an internal array above.  This 
- * indirection is for security reasons, to avoid wiki users being able
- * to inject content from arbitrary spreadsheets that they control.
+ * Google spreadsheet key via the array $sheet_ids above.
  */
 function render_gscellvalue( $input , $argv, &$parser ) {
     global $sheet_ids;
-    $sheet_key = "";
-    $find      = "";
-    $retcol    = "";
-    $wikitext  = isset($argv["wikitext"]);
+    $sheet_key  = "";
+    $find       = "";
+    $find_col   = "";
+    $return_col = "";
+    $wikitext   = isset($argv["wikitext"]);
 
     if (!isset($argv["sheet"])) {
         return "ERROR: &lt;gscellvalue&gt; is missing 'sheet' attribute.";
@@ -51,57 +88,71 @@ function render_gscellvalue( $input , $argv, &$parser ) {
     }
 
     if (!isset($argv["find"])) {
-        return "ERROR: &lt;gscellvalue&gt; is missing 'find' attribute.";
+        return "ERROR: &lt;gscellvalue&gt; missing 'find' attribute.";
     } else {
         $find = $argv["find"];
     }
 
-    if (!isset($argv["return"])) {
-        return "ERROR: &lt;gscellvalue&gt; is missing 'return' attribute.";
+    if (!isset($argv["search"])) {
+        return "ERROR: &lt;gscellvalue&gt; missing 'search' attribute.";
     } else {
-        $retcol = $argv["return"];
+        $find_col = $argv["search"];
+    }
+
+
+    if (!isset($argv["return"])) {
+        return "ERROR: &lt;gscellvalue&gt; missing 'return' attribute.";
+    } else {
+        $return_col = $argv["return"];
     }
 
     $common = "https://spreadsheets.google.com/tq?key=" . $sheet_key . "&tq=";
 
     // Step 1: get the column names.
     // This assumes the first row of the table consists of the column names.
-    // This first row is assumed to be defined as a header row.  When the table
-    // has a header row defined, the GS api returns a table with an element
-    // called "cols" that 
-
     // We then have to convert the numerical index into what Google uses for
     // column IDs, which is A, B, ..., Z, AA, AB, AC, ...
 
-    $query    = $common . "limit%201";
-    $row_data = query_gs($query);
+    $query         = $common . "limit%200";
+    $data          = query_gs($query);
+    $column_labels = extract_columns($data);
+    $column_count  = count($column_labels);
 
-    $column_count = count($row_data);
-    $index = 0;
-    for (; $index < $column_count; $index++) { 
-        if ($row_data[$index]->v == $retcol) break; 
+    // Step 2: figure out the ID's of the columns we need.
+
+    $find_col_index = -1;
+    $return_col_index = -1;
+    for ($i = 0; $i < $column_count; $i++) {
+        if (startsWith($column_labels[$i]->label, $find_col))
+            $find_col_index = $i;
+        if (startsWith($column_labels[$i]->label, $return_col))
+            $return_col_index = $i;
     }    
-    if ($index == $column_count) { 
-        return "ERROR: could not find a column named '" . $retcol . "'"; 
+    if ($find_col_index < 0) { 
+        return "ERROR: could not find a column named '" . $find_col . "'"; 
+    } 
+    if ($return_col_index < 0) { 
+        return "ERROR: could not find a column named '" . $return_col . "'"; 
     } 
 
-    $chars  = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    $scale  = intval($index/26);
-    $prefix = ($scale > 0) ? $chars[$scale - 1] : "";
-    $col    = $prefix . $chars[$index % 26];
+    $find_col_id   = index_to_id($find_col_index);
+    $return_col_id = index_to_id($return_col_index);
 
     // Step 2: get the value requested. 
 
-    $query = $common . rawurlencode("select " . $col . " where A = '" . $find . "'");
-    $cell_data = query_gs($query);
-    if (is_null($cell_data)) {
+    $query = $common . rawurlencode("select " . $return_col_id . " where "
+                                    . $find_col_id . " = '" . $find . "'");
+
+    $data  = query_gs($query);
+    if (is_null($data)) {
         return "empty";
     }
+    $rows   = extract_rows($data);
+    $output = $rows[0]->v;
 
-    $output = $cell_data[0]->v;
     if ($wikitext) {
-        $parsedText = $parser->parse($output, $parser->mTitle, $parser->mOptions,
-                                     false, false);
+        $parsedText = $parser->parse($output, $parser->mTitle,
+                                     $parser->mOptions, false, false);
         return $parsedText->getText();
     } else {
         return $output;
@@ -111,7 +162,7 @@ function render_gscellvalue( $input , $argv, &$parser ) {
 // query syntax described at
 // https://developers.google.com/chart/interactive/docs/querylanguage
 
-function query_gs ($query) {
+function query_gs($query) {
     // Without setting the error reporting level up to E_NOTICE, I get "SSL:
     // fatal protocol error" in the logs. I haven't been able to figure out
     // what the cause of the warning is. (It's not due to https:// vs http://.)
@@ -147,11 +198,31 @@ function query_gs ($query) {
 
     if (is_null($parsed->table)) {
         return "ERROR: reply from Google Spreadsheets lacks a table.";
+    } else {
+        return $parsed->table;
+    }
+}
+
+
+function extract_columns($data) {
+    $cols = $data->cols;
+    if (is_null($cols) || !is_array($cols)) {
+        return "ERROR: reply from Google Spreadsheets lacks 'cols' array.";
     }
 
-    $rows = $parsed->table->rows;
+    // The value at this point is an array of objects.  Each object will
+    // have a field named "id" and another named "label".  You would access
+    // each field as, e.g., $cols[index]->label.
+    return $cols;
+}
+
+
+function extract_rows($data) {
+    $rows = $data->rows;
     if (is_null($rows) || !is_array($rows)) {
-        return "ERROR: table returned from Google Spreadsheets lacks rows.";
+        return "ERROR: reply from Google Spreadsheets lacks 'rows' array.";
+    } else if (empty($rows)) {
+        return "";
     }
 
     $c = $rows[0]->c;
@@ -165,6 +236,23 @@ function query_gs ($query) {
 
     return $c;
 }
+
+
+function index_to_id($index) {
+    $chars  = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    $scale  = intval($index/26);
+    $prefix = ($scale > 0) ? $chars[$scale - 1] : "";
+    return $prefix . $chars[$index % 26];
+}
+
+
+// Based on answer http://stackoverflow.com/a/834355/743730 by "MrHus".
+
+function startsWith($haystack, $needle)
+{
+    return (substr($haystack, 0, strlen($needle)) == $needle);
+}
+
 
 /*
 
