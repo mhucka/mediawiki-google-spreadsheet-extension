@@ -118,34 +118,36 @@ function render_gscellvalue( $input , $argv, &$parser ) {
     $column_labels = extract_columns($data);
     $column_count  = count($column_labels);
 
-    // Step 2: figure out the ID's of the columns we need.
+    // Step 2: figure out the ID of the column we're going to search in and
+    // the index number of the column whose value we're going to return.
 
     $find_col_id = "";
-    $return_col_id = "";
+    $return_col_index = -1;
     for ($i = 0; $i < $column_count; $i++) {
         if ($column_labels[$i]->label == $find_col)
             $find_col_id = $column_labels[$i]->id;
         if ($column_labels[$i]->label == $return_col)
-            $return_col_id = $column_labels[$i]->id;
+            $return_col_index = $i;
     }    
     if ($find_col_id == "") { 
         return "ERROR: could not find a column named '" . $find_col . "'"; 
     } 
-    if ($return_col_id == "") { 
+    if ($return_col_index < 0) { 
         return "ERROR: could not find a column named '" . $return_col . "'"; 
     } 
 
-    // Step 2: get the value requested. 
+    // Step 3: get the value requested. 
 
-    $query = $common . rawurlencode("select " . $return_col_id . " where "
-                                    . $find_col_id . " = '" . $find . "'");
-
+    $query = $common . rawurlencode("where " . $find_col_id . " = '" . $find . "'");
     $data  = query_gs($query);
     if (is_null($data)) {
-        return "empty";
+        return "ERROR: received empty return from Google spreadsheets.";
     }
-    $rows   = extract_rows($data);
-    $output = $rows[0]->v;
+    $rows  = extract_rows($data);
+    if (is_null($rows)) {
+        return "ERROR: could not find '" . $find . "' in column '" . $find_col . "'";
+    }
+    $output = $rows[$return_col_index]->v;
 
     if ($wikitext) {
         $parsedText = $parser->parse($output, $parser->mTitle,
@@ -219,7 +221,7 @@ function extract_rows($data) {
     if (is_null($rows) || !is_array($rows)) {
         return "ERROR: reply from Google Spreadsheets lacks 'rows' array.";
     } else if (empty($rows)) {
-        return "";
+        return null;
     }
 
     $c = $rows[0]->c;
