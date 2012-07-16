@@ -120,23 +120,20 @@ function render_gscellvalue( $input , $argv, &$parser ) {
 
     // Step 2: figure out the ID's of the columns we need.
 
-    $find_col_index = -1;
-    $return_col_index = -1;
+    $find_col_id = "";
+    $return_col_id = "";
     for ($i = 0; $i < $column_count; $i++) {
-        if (startsWith($column_labels[$i]->label, $find_col))
-            $find_col_index = $i;
-        if (startsWith($column_labels[$i]->label, $return_col))
-            $return_col_index = $i;
+        if ($column_labels[$i]->label == $find_col)
+            $find_col_id = $column_labels[$i]->id;
+        if ($column_labels[$i]->label == $return_col)
+            $return_col_id = $column_labels[$i]->id;
     }    
-    if ($find_col_index < 0) { 
+    if ($find_col_id == "") { 
         return "ERROR: could not find a column named '" . $find_col . "'"; 
     } 
-    if ($return_col_index < 0) { 
+    if ($return_col_id == "") { 
         return "ERROR: could not find a column named '" . $return_col . "'"; 
     } 
-
-    $find_col_id   = index_to_id($find_col_index);
-    $return_col_id = index_to_id($return_col_index);
 
     // Step 2: get the value requested. 
 
@@ -235,22 +232,6 @@ function extract_rows($data) {
     // spreadsheet.  You would access it as, e.g., $c[index]->v.
 
     return $c;
-}
-
-
-function index_to_id($index) {
-    $chars  = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    $scale  = intval($index/26);
-    $prefix = ($scale > 0) ? $chars[$scale - 1] : "";
-    return $prefix . $chars[$index % 26];
-}
-
-
-// Based on answer http://stackoverflow.com/a/834355/743730 by "MrHus".
-
-function startsWith($haystack, $needle)
-{
-    return (substr($haystack, 0, strlen($needle)) == $needle);
 }
 
 
