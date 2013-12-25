@@ -8,7 +8,7 @@ A [MediaWiki](http://www.mediawiki.org) plug-in for accessing values in a Google
 
 *Copyright*: Copyright (C) 2012-2014 by the California Institute of Technology, Pasadena, USA.
 
-*License*: This code is licensed under the LGPL version 2.1.  Please see the Please see the file [../COPYING.txt](https://github.com/mhucka/google-spreadsheet-mw-plugin/COPYING.html) for details.
+*License*: This code is licensed under the LGPL version 2.1.  Please see the Please see the file [../COPYING.txt](https://raw.github.com/mhucka/google-spreadsheet-mw-plugin/master/COPYING.txt) for details.
 
 *Repository*: https://github.com/mhucka/google-spreadsheet-mw-plugin
 
