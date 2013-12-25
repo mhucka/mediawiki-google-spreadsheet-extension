@@ -1,14 +1,14 @@
 google-spreadsheet-mw-plugin
 ============================
 
-A MediaWiki plug-in for accessing values in a Google Spreadsheet.
+A [MediaWiki](http://www.mediawiki.org) plug-in for accessing values in a Google Spreadsheet.
 
 ----
 *Author*: Michael Hucka (http://www.cds.caltech.edu/~mhucka)
 
-*Copyright*: Copyright (C) 2012 by the California Institute of Technology, Pasadena, USA.
+*Copyright*: Copyright (C) 2012-2014 by the California Institute of Technology, Pasadena, USA.
 
-*License*: This code is licensed under the LGPL version 2.1.  Please see the Please see the file "../COPYING.txt" for details.
+*License*: This code is licensed under the LGPL version 2.1.  Please see the Please see the file [../COPYING.txt](https://github.com/mhucka/google-spreadsheet-mw-plugin/COPYING.html) for details.
 
 *Repository*: https://github.com/mhucka/google-spreadsheet-mw-plugin
 
@@ -39,7 +39,7 @@ your changes to the code or documentation.
 License
 -------
 
-Copyright (C) 2012 by the California Institute of Technology, Pasadena, USA.
+Copyright (C) 2012-2014 by the California Institute of Technology, Pasadena, USA.
 
 This library is free software; you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation; either version 2.1 of the License, or any later version.
 
