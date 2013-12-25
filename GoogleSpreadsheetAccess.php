@@ -1,31 +1,62 @@
 <?php
 /**
-** ============================================================================
-** @file    GoogleSiteSearch.php
-** @brief   MediaWiki plug-in for accessing values in a Google Spreadsheet
-** @author  Michael Hucka (mhucka@caltech.edu), Caltech
-**
-** See http://mhucka.github.com/google-spreadsheet-mw-plugin for more info.
-**
-** This plug-in was developed as part of the SBML Project (http://sbml.org).
-** Copyright (C) 2012 by the California Institute of Technology, Pasadena, USA.
-**
-** This library is free software; you can redistribute it and/or modify it
-** under the terms of the GNU Lesser General Public License as published by
-** the Free Software Foundation.  A copy of the license agreement is provided
-** in the file named "LICENSE.txt" included with this software distribution
-** and also available online as http://sbml.org/software/libsbml/license.html
-** ============================================================================
-*/
+ * ============================================================================
+ * @file    GoogleSiteSearch.php
+ * @brief   MediaWiki plug-in for accessing values in a Google Spreadsheet
+ * @author  Michael Hucka (mhucka@caltech.edu), Caltech
+ *
+ * See http://mhucka.github.com/google-spreadsheet-mw-plugin for more info.
+ *
+ * This plug-in was developed as part of the SBML Project (http://sbml.org).
+ * Copyright (C) 2012 by the California Institute of Technology, Pasadena, USA.
+ *
+ * This library is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation; either version 2.1 of the License, or any
+ * later version.
+ * 
+ * This software is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF MERCHANTABILITY
+ * OR FITNESS FOR A PARTICULAR PURPOSE.  The software and documentation
+ * provided hereunder is on an "as is" basis, and the California Institute of
+ * Technology has no obligations to provide maintenance, support, updates,
+ * enhancements or modifications.  In no event shall the California Institute
+ * of Technology be liable to any party for direct, indirect, special,
+ * incidental or consequential damages, including lost profits, arising out
+ * of the use of this software and its documentation, even if the California
+ * Institute of Technology has been advised of the possibility of such
+ * damage.  See the GNU Lesser General Public License for more details.
+ * 
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this library in the file named "COPYING.txt" included with the
+ * software distribution.
+ * ============================================================================
+ */
 
-$wgExtensionFunctions[] = "wf_google_spreadsheet_include";
+/*
+ * Standard MediaWiki code to protect against register_globals vulnerabilities.
+ * This line must be present before any global variable is referenced.
+ */
+if (!defined('MEDIAWIKI')) {
+    echo("This file is part of MediaWiki. It is not a valid entry point.\n");
+    die(-1);
+}
+
+global $wgExtensionCredits;
 $wgExtensionCredits['other'][] = array(
+    'path'        => __FILE__,
     'name'        => 'GoogleSpreadsheetAccess',
     'author'      => 'Michael Hucka (mhucka@caltech.edu)',
     'url'         => 'http://mhucka.github.com/google-spreadsheet-mw-plugin',
     'description' => 'Return values from a Google Spreadsheet.',
+    'version'     => '1.0.0',
 );
 
+$wgExtensionFunctions[] = "wf_google_spreadsheet_include";
+
+/**
+ * Hooks this extension into the MediaWiki parser.
+ */
 function wf_google_spreadsheet_include() {
     global $wgParser;
     $wgParser->setHook( "gscellvalue", "render_gscellvalue" );
@@ -56,78 +87,202 @@ $sheet_ids = array(
  * of column labels.  References to rows in this extension are to these row
  * labels and NOT to the spreadsheet row ID's; this allows people to reorder
  * the spreadsheet columns without affecting references in MediaWiki pages.
+ * String matches are performed in a case-sensitive manner.
  *
- * The syntax in MediaWiki markup is the following:
+ * The syntax is the following:
  *
- * <gscellvalue sheet="W" find="X" search="Y" return="Z" wikitext>
+ * <gscellvalue sheet="S" find="X" in="Y" return="Z" 
+ *              prepend="A" append="B" ifempty="C" wikitext bigtable>
  *
- * where:
- *   W = name for the sheet (see $sheet_ids above)
+ * where the following are required:
+ *   S = name for the spreadsheet (see $sheet_ids above)
  *   X = exact string to look for in column "Y", to find a row
  *   Y = label (not ID) of the column in which to search for content "X"
  *   Z = label (not ID) of the column whose value is to be returned
- *   wikitext = (optional) keyword to indicate content is to be parsed
+ * and the following arguments are optional:
+ *   A = text to prepend to the value returned
+ *   B = text to append to the value returned
+ *   C = value to return if the cell content is found to be empty
+ *   wikitext = keyword indicating content is to be parsed before returning it
+ *   bigtable = keyword indicating table is large, so don't read it all at once
  *
- * The spreadsheet is identified by a name; this is mapped to an actual
- * Google spreadsheet key via the array $sheet_ids above.
+ * If a value for the optional argument 'ifempty' is supplied, and the
+ * spreadsheet cell to be returned is empty, only the value of 'ifempty' is
+ * returned alone, without prepending A or appending B.  Conversely, if a
+ * value for 'ifempty' is not supplied, and the spreadsheet cell value is
+ * empty, then A and B *will* still be prepended and appended (which means
+ * you will get the concatenation "AB" as the returned result).  Single-
+ * and double-quote characters will be removed from the resulting string
+ * before it is returned or parsed as wikitext; this is necessary so that
+ * A and B can be strings with leading and trailing spaces (which you can
+ * do by putting quotes around the strings, like this: append="' text'").
+ *
+ * If the attribute 'wikitext' is supplied, the entire string to be returned
+ * is first handed to the MediaWiki parser, and the result of that is what is
+ * returned.  The attribute 'wikitext' takes no value.
+ *
+ * By default, this plug-in will make a single call to Google to get the
+ * entire table in one read, then do the cell value lookups internally in
+ * this plug-in.  Depending on the size of the spreadsheet, the speed of your
+ * server, and the number of uses of <gscellvalue> in a given MediaWiki page,
+ * this approach may be slower than doing two separate reads together with
+ * using the Google spreadsheets query API.  If the attribute 'bigtable' is
+ * supplied, this plug-in will make two separate calls to Google rather than
+ * read the whole spreadsheet into memory in one call.
+ *
+ * Other attributes supplied to gscellvalue are silently ignored.
  */
 function render_gscellvalue( $input , $argv, &$parser ) {
+    wfProfileIn( "gscellvalue" );
+
     global $sheet_ids;
     $sheet_key  = "";
-    $find       = "";
-    $find_col   = "";
-    $return_col = "";
+    $sheet      = isset($argv["sheet"])   ? $argv["sheet"]   : "";
+    $find       = isset($argv["find"])    ? $argv["find"]    : "";
+    $find_col   = isset($argv["in"])      ? $argv["in"]      : "";
+    $return_col = isset($argv["return"])  ? $argv["return"]  : "";
+    $prepend    = isset($argv["prepend"]) ? $argv["prepend"] : "";
+    $append     = isset($argv["append"])  ? $argv["append"]  : "";
+    $ifempty    = isset($argv["ifempty"]) ? $argv["ifempty"] : "";
     $wikitext   = isset($argv["wikitext"]);
+    $bigtable   = isset($argv["bigtable"]);
 
-    if (!isset($argv["sheet"])) {
+    if (empty($sheet)) {
         return "ERROR: &lt;gscellvalue&gt; is missing 'sheet' attribute.";
-    } elseif ( !array_key_exists($argv["sheet"], $sheet_ids) ) {
-        return "ERROR: unknown sheet name '" . $argv["sheet"] . "'";
+    } elseif ( !array_key_exists($sheet, $sheet_ids) ) {
+        return "ERROR: unknown sheet name '" . $sheet . "'";
     } else {
-        $sheet_key = $sheet_ids[$argv["sheet"]];
+        $sheet_key = $sheet_ids[$sheet];
     }
-
-    if (!isset($argv["find"])) {
+    if (empty($find)) {
         return "ERROR: &lt;gscellvalue&gt; missing 'find' attribute.";
-    } else {
-        $find = $argv["find"];
     }
-
-    if (!isset($argv["search"])) {
-        return "ERROR: &lt;gscellvalue&gt; missing 'search' attribute.";
-    } else {
-        $find_col = $argv["search"];
+    if (empty($find_col)) {
+        return "ERROR: &lt;gscellvalue&gt; missing 'in' attribute.";
     }
-
-
-    if (!isset($argv["return"])) {
+    if (empty($return_col)) {
         return "ERROR: &lt;gscellvalue&gt; missing 'return' attribute.";
-    } else {
-        $return_col = $argv["return"];
     }
 
+    // Let's get this show on the road.  
+
+    if ($bigtable) {
+        $data = gscellvalue_bigtable($sheet_key, $find, $find_col, $return_col);
+    } else {
+        $data = gscellvalue_default($sheet_key, $find, $find_col, $return_col);
+    }
+
+    if (is_string($data) && startsWith($data, "ERROR")) {
+        return $data;
+    } else if (empty($data) && !empty($ifempty)) {
+        $data = $ifempty;
+    } else {
+        $data = $prepend . $data . $append;
+        $data = str_replace('"', "", $data);
+        $data = str_replace("'", "", $data);
+    }
+
+    if ($wikitext) {
+        $parsedText = $parser->parse($data, $parser->mTitle,
+                                     $parser->mOptions, false, false);
+        wfProfileOut( "gscellvalue" );
+        return $parsedText->getText();
+    } else {
+        wfProfileOut( "gscellvalue" );
+        return htmlspecialchars($data);
+    }
+}
+
+function gscellvalue_default($sheet_key, $find, $find_col, $return_col) {
+    $query = "https://spreadsheets.google.com/tq?key=" . $sheet_key;
+
+    // Step 1: get the entire table.
+
+    $data  = query_gs($query);
+    if (is_string($data) && startsWith($data, "ERROR")) {
+        return $data;
+    }
+
+    // Step 2: extract the first row, assumed to contain the column names.
+
+    $label_row = extract_row($data, 0);
+    if (is_null($label_row)) {
+        return "ERROR: could not extract the first row of the spreadsheet.";
+    }
+
+    // Step 3: figure out the index of the column we're going to search, and
+    // the index of the column whose value we're going to return.
+
+    $num_columns = count($label_row);
+    $find_col_index = -1;
+    $return_col_index = -1;
+    for ($i = 0; $i < $num_columns; $i++) {
+        if ($label_row[$i]->v == $find_col)
+            $find_col_index = $i;
+        if ($label_row[$i]->v == $return_col)
+            $return_col_index = $i;
+        if ($find_col_index > 0 && $return_col_index > 0)
+            break;
+    }    
+    if ($find_col_index < 0) { 
+        return "ERROR: could not find a column named '" . $find_col . "'"; 
+    } 
+    if ($return_col_index < 0) { 
+        return "ERROR: could not find a column named '" . $return_col . "'"; 
+    } 
+
+    // Step 3: figure out the row where the entry is located.
+
+    $num_rows = count_data_rows($data);
+    $row_found_index = -1;
+    for ($i = 0; $i < $num_rows; $i++) {
+        $value = cell_value($data, $i, $find_col_index);
+        if ($value == $find) {
+            $row_found_index = $i;
+            break;
+        }
+    }
+    if ($row_found_index < 0) {
+        return "ERROR: could not find '" . $find . "' in column '" . $find_col . "'";
+    }
+
+    // Step 4: return what we found.
+
+    return cell_value($data, $row_found_index, $return_col_index);
+}
+
+
+function gscellvalue_bigtable($sheet_key, $find, $find_col, $return_col) {
     $common = "https://spreadsheets.google.com/tq?key=" . $sheet_key . "&tq=";
 
-    // Step 1: get the column names.
-    // This assumes the first row of the table consists of the column names.
-    // We then have to convert the numerical index into what Google uses for
-    // column IDs, which is A, B, ..., Z, AA, AB, AC, ...
+    // Step 1: get the first row, which we assume contains the column names.
 
-    $query         = $common . "limit%200";
-    $data          = query_gs($query);
-    $column_labels = extract_columns($data);
-    $column_count  = count($column_labels);
+    $query = $common . "limit%201";
+    $data  = query_gs($query);
+    if (is_null($data)) {
+        return $data;
+    }
+    $label_row = extract_row($data, 0);
+    if (is_null($label_row) || !is_array($label_row)) {
+        return "ERROR: could not extract the first row of the spreadsheet.";
+    }
 
     // Step 2: figure out the ID of the column we're going to search in and
     // the index number of the column whose value we're going to return.
+    // (Note: the first is a string identifier, and the second is a number.
+    // To get the ID, we have to convert the numerical index into what
+    // Google uses for column IDs, which is A, B, ..., Z, AA, AB, AC, ...)
 
+    $num_columns = count($label_row);
     $find_col_id = "";
     $return_col_index = -1;
-    for ($i = 0; $i < $column_count; $i++) {
-        if ($column_labels[$i]->label == $find_col)
-            $find_col_id = $column_labels[$i]->id;
-        if ($column_labels[$i]->label == $return_col)
+    for ($i = 0; $i < $num_columns; $i++) {
+        if ($label_row[$i]->v == $find_col)
+            $find_col_id = index_to_identifier($i);
+        if ($label_row[$i]->v == $return_col)
             $return_col_index = $i;
+        if ($find_col_id != "" && $return_col_index > 0)
+            break;
     }    
     if ($find_col_id == "") { 
         return "ERROR: could not find a column named '" . $find_col . "'"; 
@@ -143,46 +298,39 @@ function render_gscellvalue( $input , $argv, &$parser ) {
     if (is_null($data)) {
         return "ERROR: received empty return from Google spreadsheets.";
     }
-    $rows  = extract_rows($data);
-    if (is_null($rows)) {
+    $rows = extract_row($data, 0);
+    if (is_null($rows) || !is_array($rows)) {
         return "ERROR: could not find '" . $find . "' in column '" . $find_col . "'";
     }
-    $output = $rows[$return_col_index]->v;
 
-    if ($wikitext) {
-        $parsedText = $parser->parse($output, $parser->mTitle,
-                                     $parser->mOptions, false, false);
-        return $parsedText->getText();
-    } else {
-        return $output;
-    }
+    // Step 4: return something.
+
+    return $rows[$return_col_index]->v;
 }
+
 
 // query syntax described at
 // https://developers.google.com/chart/interactive/docs/querylanguage
 
-function query_gs($query) {
-    // Without setting the error reporting level up to E_NOTICE, I get "SSL:
-    // fatal protocol error" in the logs. I haven't been able to figure out
-    // what the cause of the warning is. (It's not due to https:// vs http://.)
-
-    error_reporting(E_NOTICE);
-    $data = file_get_contents($query);
-    error_reporting(E_WARNING);
-
+function query_gs($query) { /*  */
+    $data = do_curl($query);
     if (is_null($data)) {
         return "ERROR: null data returned.";
     }
 
-    // Example of a reply from Google:
+    // Extract the JSON part of the reply from Google.
+    // Example of a reply from Google (the "// Data ..." is part of it!)
+    // 
+    //   // Data table response
     //   google.visualization.Query.setResponse({"version":"0.6","status":"ok",
     //   "sig":"999999999","table":{"cols":[{"id":"D","label":"",
     //   "type":"string", "pattern":""}],"rows":[{"c":[{"v":"sbml-comp"}]}]}});
 
-    // We extract the JSON part of the string, then try to parse it:
+    $json = substr($data, strpos($data, "{"), -2);
 
-    $json = substr($data, 39, -2);
-    $parsed = fromJSON($json);
+    // Now turn it into a data array:
+
+    $parsed = json_decode($json);
     if (is_null($parsed)) {
         return "ERROR: unable to parse reply from Google Spreadsheets";
     } elseif (is_null($parsed->status)) {
@@ -203,151 +351,65 @@ function query_gs($query) {
 }
 
 
-function extract_columns($data) {
-    $cols = $data->cols;
-    if (is_null($cols) || !is_array($cols)) {
-        return "ERROR: reply from Google Spreadsheets lacks 'cols' array.";
-    }
+// The value returned will be an array of objects. Each object will
+// have a field named "v" whose value is the content of a cell in the
+// spreadsheet.  You would access it as, e.g., $c[index]->v.
 
-    // The value at this point is an array of objects.  Each object will
-    // have a field named "id" and another named "label".  You would access
-    // each field as, e.g., $cols[index]->label.
-    return $cols;
-}
-
-
-function extract_rows($data) {
+function extract_row($data, $index) {
     $rows = $data->rows;
-    if (is_null($rows) || !is_array($rows)) {
-        return "ERROR: reply from Google Spreadsheets lacks 'rows' array.";
-    } else if (empty($rows)) {
+    if (!empty($rows) && is_array($rows)) {
+        return $rows[$index]->c;
+    } else {
         return null;
     }
-
-    $c = $rows[0]->c;
-    if (is_null($c) || !is_array($c)) {
-        return "ERROR: table returned from Google Spreadsheets lacks 'c' part.";
-    }
-
-    // The value at this point will be an array of objects. Each object will
-    // have a field named "v" whose value is the content of a cell in the
-    // spreadsheet.  You would access it as, e.g., $c[index]->v.
-
-    return $c;
 }
 
 
-/*
+function count_data_rows($data) {
+    return count($data->rows);
+}
 
-  simplejson - a tiny JSON parser for older PHP versions
 
-  ------------
-  
-  The main purpose of this is to allow the parsing of JSON encoded strings
-  into PHP native structures, or PHP objects encoding into JSON strings. 
-  Primary target for this are mature systems running versions of PHP older 
-  than 5.2, which provides this functionality. 
-  
-  The functions are confirmed to work on PHP as old as 4.1.2.
-  
-  The functions do not care about character encoding and will do nothing
-  to magically fix character set issues. They'll work with the data 
-  as-provided and won't, for example, (un)escape \u0000 or \x00 characters.
-  
-  WARNING: Be aware that the string input is being "evaluated" and run by this 
-  function with all the implications that includes!
-  
-  ------------
-  
-  Copyright (C) 2006 Borgar Thorsteinsson [borgar.undraland.com]
-  
-  Permission is hereby granted, free of charge, to any person
-  obtaining a copy of this software and associated documentation
-  files (the "Software"), to deal in the Software without
-  restriction, including without limitation the rights to use,
-  copy, modify, merge, publish, distribute, sublicense, and/or sell
-  copies of the Software, and to permit persons to whom the
-  Software is furnished to do so, subject to the following
-  conditions:
+function cell_value($data, $row_index, $col_index) {
+    return $data->rows[$row_index]->c[$col_index]->v;
+}
 
-  The above copyright notice and this permission notice shall be
-  included in all copies or substantial portions of the Software.
 
-  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-  EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
-  OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-  NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
-  HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
-  WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
-  OTHER DEALINGS IN THE SOFTWARE.
+function index_to_identifier($index) {
+    $chars  = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    $scale  = intval($index/26);
+    $prefix = ($scale > 0) ? $chars[$scale - 1] : "";
+    return $prefix . $chars[$index % 26];
+}
 
-  ------------
 
-  
-*/
-/**
- * Parses a JSON string into a PHP variable.
- * @param string $json  The JSON string to be parsed.
- * @param bool $assoc   Optional flag to force all objects into associative arrays.
- * @return mixed        Parsed structure as object or array, or null on parser failure.
- */
-function fromJSON ( $json, $assoc = false ) {
+function do_curl($query) {
+    $ch = curl_init($query);
 
-  /* by default we don't tolerate ' as string delimiters
-     if you need this, then simply change the comments on
-     the following lines: */
+    curl_setopt($ch, CURLOPT_HEADER,         false);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+    curl_setopt($ch, CURLOPT_TIMEOUT,        15);
 
-  // $matchString = '/(".*?(?<!\\\\)"|\'.*?(?<!\\\\)\')/';
-  $matchString = '/".*?(?<!\\\\)"/';
-  
-  // safety / validity test
-  $t = preg_replace( $matchString, '', $json );
-  $t = preg_replace( '/[,:{}\[\]0-9.\-+Eaeflnr-u \n\r\t]/', '', $t );
-  if ($t != '') { return null; }
+    wfProfileIn( "gscellvalue_curl" );
+    $output = curl_exec($ch);
+    if (empty($output)) {
+        return "ERROR: encountered network access error";
+        curl_close($ch);
+    } else {
+        curl_close($ch);
+        wfProfileOut( "gscellvalue_curl" );
+        return $output;
+    }
+}
 
-  // build to/from hashes for all strings in the structure
-  $s2m = array();
-  $m2s = array();
-  preg_match_all( $matchString, $json, $m );
-  foreach ($m[0] as $s) {
-    $hash       = '"' . md5( $s ) . '"';
-    $s2m[$s]    = $hash;
-    $m2s[$hash] = str_replace( '$', '\$', $s );  // prevent $ magic
-  }
-  
-  // hide the strings
-  $json = strtr( $json, $s2m );
-  
-  // convert JS notation to PHP notation
-  $a = ($assoc) ? '' : '(object) ';
-  $json = strtr( $json, 
-    array(
-      ':' => '=>', 
-      '[' => 'array(', 
-      '{' => "{$a}array(", 
-      ']' => ')', 
-      '}' => ')'
-    ) 
-  );
-  
-  // remove leading zeros to prevent incorrect type casting
-  $json = preg_replace( '~([\s\(,>])(-?)0~', '$1$2', $json );
-  
-  // return the strings
-  $json = strtr( $json, $m2s );
 
-  /* "eval" string and return results. 
-     As there is no try statement in PHP4, the trick here 
-     is to suppress any parser errors while a function is 
-     built and then run the function if it got made. */
-  $f = @create_function( '', "return {$json};" );
-  $r = ($f) ? $f() : null;
+// From answer http://stackoverflow.com/a/834355/743730 by "MrHus".
 
-  // free mem (shouldn't really be needed, but it's polite)
-  unset( $s2m ); unset( $m2s ); unset( $f );
-
-  return $r;
+function startsWith($haystack, $needle)
+{
+    $length = strlen($needle);
+    return (substr($haystack, 0, $length) === $needle);
 }
 
 ?>
