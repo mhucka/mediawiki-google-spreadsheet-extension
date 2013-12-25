@@ -12,16 +12,23 @@ A [MediaWiki](http://www.mediawiki.org) plug-in for accessing values in a Google
 
 *Repository*: https://github.com/mhucka/google-spreadsheet-mw-plugin
 
+
 Requirements
 ------------
 
+1. This is designed to work as a plug-in for MediaWiki.  It has so far only been tested and used with MediaWiki 1.11.
+2. This relies on a JSON parser.  It was written to use the JSON PECL extension in PHP 5.1.6, but other json parsers would probably work with small modifications.
+
+
 Usage
 -----
+
 
 History and acknowledgments
 ---------------------------
 
 This code was written for the SBML project website (http://sbml.org) under funding from grant R01GM070923 (Principal Investigator: Dr. Michael Hucka) from the National Institute of General Medical Sciences (USA) to the California Institute of Technology.  The first version was written and deployed in mid-2012.
+
 
 Contributing
 ------------
@@ -35,6 +42,7 @@ your changes to the code or documentation.
 3. Commit your changes (`git commit -am 'Describe your changes here'`).
 4. Push to the branch (`git push origin my-new-feature`).
 5. Create a new pull request to notify me of your suggested changes.
+
 
 License
 -------
