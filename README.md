@@ -94,18 +94,18 @@ The wiki page syntax for `gscellvalue` is the following:
 
 where the following arguments are required:
 
-| S = | name for the spreadsheet (see $sheet_ids above) |
-| X = | exact string to look for in column "Y", to find a row |
-| Y = | label (not ID) of the column in which to search for content "X" |
-| Z = | label (not ID) of the column whose value is to be returned |
+ *S* =  name for the spreadsheet (see $sheet_ids above) <br>
+ *X* =  exact string to look for in column "Y", to find a row <br>
+ *Y* =  label (not ID) of the column in which to search for content "X" <br>
+ *Z* =  label (not ID) of the column whose value is to be returned <br>
 
 and the following arguments are optional:
 
-| A = | text to prepend to the value returned |
-| B = | text to append to the value returned |
-| C = | value to return if the cell content is found to be empty |
-| wikitext = | keyword indicating content is to be parsed before returning it |
-| bigtable = | keyword indicating table is large, so don't read it all at once |
+ *A* =  text to prepend to the value returned <br>
+ *B* =  text to append to the value returned <br>
+ *C* =  value to return if the cell content is found to be empty <br>
+ *wikitext* =  keyword indicating content is to be parsed before returning it <br>
+ *bigtable* =  keyword indicating table is large, so don't read it all at once <br>
 
 If a value for the optional argument 'ifempty' is supplied, and the
 spreadsheet cell to be returned is empty, only the value of 'ifempty' is
