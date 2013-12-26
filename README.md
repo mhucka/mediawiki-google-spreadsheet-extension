@@ -58,18 +58,24 @@ $sheet_ids = array(
 );
 ~~~~~
 
-For each *"sheet name"*, create an identifier that you want to use in the references in your wiki pages.  To find the *"Google key for spreadsheet" part, look at the URL of your Google Docs spreadsheet and find the part after the `key=` keyword.  It will look something like the following:
+For each *"sheet name"*, create an identifier that you want to use in the references in your wiki pages.  To find the *"Google key for spreadsheet"* part, look at the URL of your Google Docs spreadsheet and find the part after the `key=` keyword.  It will look something like the following:
 
 ~~~~~
 https://spreadsheets.google.com/tq?key=045klja34aAKLjasdfLLLJlkasdf04aKL73zz
 ~~~~~
 
-Suppose you wanted to use the sheet name **mysheet**.  If the above was the Google Docs key for the spreadsheet, the following is an example of what the final setting in the PHP file would look like:
+Suppose you wanted to name the sheet **mysheet** when referencing it from your wiki pages.  If the above was the Google Docs key for the spreadsheet, the following is an example of what the final setting in the PHP file would look like:
 
 ~~~~~php
 $sheet_ids = array(
    "mysheet" => "045klja34aAKLjasdfLLLJlkasdf04aKL73zz"
 );
+~~~~~
+
+Then in your wiki pages, references would look like this:
+
+~~~~~
+<gscellvalue sheet="mysheet" find="..." in="..." return="..." ...>
 ~~~~~
 
 
