@@ -1,7 +1,7 @@
 google-spreadsheet-mw-plugin
 ============================
 
-A [MediaWiki](http://www.mediawiki.org) plug-in for accessing values in a Google Spreadsheet.
+A [MediaWiki](http://www.mediawiki.org) plug-in for accessing values in a Google Spreadsheet.  It provides a tag you can insert into MediaWiki documents; each use of the tag can reference a cell in a Google Docs spreadsheet and return the value in that cell.
 
 ----
 *Author*: Michael Hucka (http://www.cds.caltech.edu/~mhucka)
@@ -20,8 +20,25 @@ Requirements
 2. This relies on a JSON parser.  It was written to use the JSON PECL extension in PHP 5.1.6, but other json parsers would probably work with small modifications.
 
 
+Background
+----------
+
+In one of our projects, we maintain a large spreadsheet in Google Docs for tracking the status of different subprojects.  Most of the other public information about the subprojects, however, is maintained on our website, which is implemented using MediaWiki together with a custom skin and extensions.  We didn't want to manually copy data from that spreadsheet into the wiki pages because it would inevitably fall out of sync.  After searching and failing to find a MediaWiki plug-in to return values from a Google Docs spreadsheet, I implemented this solution.
+
+The *google-spreadsheet-mw-plugin* provides a tag, `<gcscellvalue>`, that can be used in wiki pages.  The tag takes arguments specifying a spreadsheet in Google Docs and a cell within that spreadsheet.  When the page is read, the tag returns the value of the spreadsheet cell, optionally doing some additional manipulations on the value.  The result is that you can write web pages that seamlessly integrate data and text automatically fetched directly from the spreadsheet.
+
+
 Usage
 -----
+
+There are three parts to using this.  First, you need to add the plug-in to your MediaWiki installation.  Second, you need to configure it to be able to access one or more spreadsheets in Google Docs.  Third, you need to write wiki pages that use the tag provided by the plug-in.
+
+### Installing the plug-in
+
+### Configuring the plug-in
+
+### Using the plug-in in wiki pages
+
 
 
 History and acknowledgments
