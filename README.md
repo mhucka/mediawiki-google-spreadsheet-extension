@@ -64,6 +64,14 @@ For each *"sheet name"*, create an identifier that you want to use in the refere
 https://spreadsheets.google.com/tq?key=045klja34aAKLjasdfLLLJlkasdf04aKL73zz
 ~~~~~
 
+Suppose you wanted to use the sheet name **mysheet**.  If the above was the Google Docs key for the spreadsheet, the following is an example of what the final setting in the PHP file would look like:
+
+~~~~~php
+$sheet_ids = array(
+   "mysheet" => "045klja34aAKLjasdfLLLJlkasdf04aKL73zz"
+);
+~~~~~
+
 
 ### Using the plug-in in wiki pages
 
