@@ -81,7 +81,7 @@ Then in your wiki pages, references would look like this:
 
 ### Using the plug-in in wiki pages
 
-When used in a wiki page, `<gscellvalue>` accepts arguments that indicate a row to find in the spreadsheet and the column value within that row to be returned.  The approach is relatively simple and relies on one important assumption about the spreadsheet: that the **first row consists of column labels**.  References to "rows" in this extension are to these row labels and **not** to the spreadsheet's own row identifiers---in other words, not to the "A", "B", "C", .... "AA", "AB", etc., provided by the spreadsheet, but rather to row labels that the spreadsheet author provides.  This approach provides an important capability: you can reorder the spreadsheet columns without affecting column references in MediaWiki pages.
+When used in a wiki page, `<gscellvalue>` accepts arguments that indicate a row to find in the spreadsheet and the column value within that row to be returned.  The approach is relatively simple and relies on one important assumption about the spreadsheet: that the **first row consists of column labels**.  References to "rows" in this extension are to these row labels and **not** to the spreadsheet's own row identifiers&mdash;in other words, not to the "A", "B", "C", .... "AA", "AB", etc., provided by the spreadsheet, but rather to row labels that the spreadsheet author provides.  This approach provides an important capability: you can reorder the spreadsheet columns without affecting column references in MediaWiki pages.
 
 String matches are performed in a case-*sensitive* manner.  (I.e., "Foo" is not considered to be the same as "foo".)
 
@@ -94,18 +94,18 @@ The wiki page syntax for `gscellvalue` is the following:
 
 where the following arguments are required:
 
- | S = | name for the spreadsheet (see $sheet_ids above) |
- | X = | exact string to look for in column "Y", to find a row |
- | Y = | label (not ID) of the column in which to search for content "X" |
- | Z = | label (not ID) of the column whose value is to be returned |
+| S = | name for the spreadsheet (see $sheet_ids above) |
+| X = | exact string to look for in column "Y", to find a row |
+| Y = | label (not ID) of the column in which to search for content "X" |
+| Z = | label (not ID) of the column whose value is to be returned |
 
 and the following arguments are optional:
 
- | A = | text to prepend to the value returned |
- | B = | text to append to the value returned |
- | C = | value to return if the cell content is found to be empty |
- | wikitext = | keyword indicating content is to be parsed before returning it |
- | bigtable = | keyword indicating table is large, so don't read it all at once |
+| A = | text to prepend to the value returned |
+| B = | text to append to the value returned |
+| C = | value to return if the cell content is found to be empty |
+| wikitext = | keyword indicating content is to be parsed before returning it |
+| bigtable = | keyword indicating table is large, so don't read it all at once |
 
 If a value for the optional argument 'ifempty' is supplied, and the
 spreadsheet cell to be returned is empty, only the value of 'ifempty' is
