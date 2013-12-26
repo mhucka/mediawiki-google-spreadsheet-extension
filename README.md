@@ -35,7 +35,35 @@ There are three parts to using this.  First, you need to add the plug-in to your
 
 ### Installing the plug-in
 
+Use the same procedure as you would to install any other MediaWiki plug-in.  For our MediaWiki installation, it was simply as follows:
+
+**1**. Copy the PHP file to the `extensions` subdirectory in your MediaWiki installation.
+
+**2**. Add a line to your LocalSettings.php file to load the PHP file. For example, here is what it looks like for our system:
+
+~~~~~php
+require_once( "$IP/extensions/google-spreadsheet-mw-plugin/GoogleSpreadsheetAccess.php");
+~~~~~
+
+
 ### Configuring the plug-in
+
+For security reasons, the plug-in does not allow you to reference spreadsheets directly from the tag in a wiki page.  (Doing so would allow anyone with write access to your wiki to insert potentially malicious constructs from spreadsheets they control.)  Instead, there is a level of indirection: on the server you define identifiers that are mapped to actual spreadsheets, and when you use the tag in a wiki page, you use the identifier to name the spreadsheet you want to access.  Thus, the maintainers of the wiki site controls which spreadsheets can be accessed.  (Of course, for this security measure to have any value, the maintainer of the wiki should also control write access to the spreadsheets.  If the maintainer of the wiki do not control write access to the spreadsheets, or worse, the spreadsheets are publicly writable, then this indirection offers no security at all.)
+
+To configure the plug-in, edit the `$sheet_ids` variable near the top of the PHP file.  The format is
+
+~~~~~php
+$sheet_ids = array(
+   "sheet name" => "Google key for spreadsheet"
+);
+~~~~~
+
+For each *"sheet name"*, create an identifier that you want to use in the references in your wiki pages.  To find the *"Google key for spreadsheet" part, look at the URL of your Google Docs spreadsheet and find the part after the `key=` keyword.  It will look something like the following:
+
+~~~~~
+https://spreadsheets.google.com/tq?key=045klja34aAKLjasdfLLLJlkasdf04aKL73zz
+~~~~~
+
 
 ### Using the plug-in in wiki pages
 
