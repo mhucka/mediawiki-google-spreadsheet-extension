@@ -64,7 +64,7 @@ For each *"sheet name"*, create an identifier that you want to use in the refere
 https://spreadsheets.google.com/tq?key=045klja34aAKLjasdfLLLJlkasdf04aKL73zz
 ~~~~~
 
-Suppose you wanted to name the sheet **mysheet** when referencing it from your wiki pages.  If the above was the Google Docs key for the spreadsheet, the following is an example of what the final setting in the PHP file would look like:
+Suppose you wanted to name the sheet **mysheet** when referencing it from your wiki pages.  If the above was the Google Docs URL for the spreadsheet, the following is an example of what the final setting in the PHP file would look like:
 
 ~~~~~php
 $sheet_ids = array(
@@ -72,7 +72,7 @@ $sheet_ids = array(
 );
 ~~~~~
 
-Then in your wiki pages, references would look like this:
+Then in your wiki pages, references to **mysheet** would look like this:
 
 ~~~~~
 <gscellvalue sheet="mysheet" find="..." in="..." return="..." ...>
@@ -81,9 +81,9 @@ Then in your wiki pages, references would look like this:
 
 ### Using the plug-in in wiki pages
 
-When used in a wiki page, `<gscellvalue>` accepts arguments that indicate a row to find in the spreadsheet and the column value within that row to be returned.  The approach is relatively simple and relies on one important assumption about the spreadsheet: that the **first row consists of column labels**.  References to "rows" in this extension are to these row labels and **not** to the spreadsheet's own row identifiers&mdash;in other words, not to the "A", "B", "C", .... "AA", "AB", etc., provided by the spreadsheet, but rather to row labels that the spreadsheet author provides.  This approach provides an important capability: you can reorder the spreadsheet columns without affecting column references in MediaWiki pages.
+When used in a wiki page, `<gscellvalue>` accepts arguments that indicate a row to find in the spreadsheet and the column within that row.  The content of the cell identified by that row/column combination is returned.  The indexing approach relies on one important assumption about the spreadsheet: that the **first row consists of column labels**.  References to "rows" in this extension are to these row labels and **not** to the spreadsheet's own row identifiers&mdash;in other words, **not** to the "A", "B", "C", .... "AA", "AB", etc., provided by the spreadsheet, but rather to row labels that the spreadsheet author provides.  This approach is crucial to allowing you to reorder the spreadsheet columns without affecting column references in MediaWiki pages.
 
-The wiki page syntax for `gscellvalue` is the following:
+The page syntax for using `gscellvalue` in wiki text is the following:
 
 ~~~~~
 <gscellvalue sheet="S" find="X" in="Y" return="Z" 
@@ -94,8 +94,8 @@ where the following arguments are required:
 
  `S` =  identifier for the spreadsheet (see `$sheet_ids` above) <br>
  `X` =  exact string to look for in column `Y` to find a row <br>
- `Y` =  label (not ID) of the column in which to search for content `X` <br>
- `Z` =  label (not ID) of the column whose value is to be returned <br>
+ `Y` =  label of the column in which to search for content `X` <br>
+ `Z` =  label of the column whose value is to be returned <br>
 
 and the following arguments are optional:
 
@@ -105,13 +105,11 @@ and the following arguments are optional:
  `wikitext` =  keyword indicating content is to be parsed before returning it <br>
  `bigtable` =  keyword indicating table is large, so don't read it all at once <br>
 
-If a value for the optional argument `ifempty` is supplied, and the spreadsheet cell to be returned is empty, only the value of `ifempty` is returned alone, without prepending `A` or appending `B`.  Conversely, if a value for `ifempty` is not supplied, and the spreadsheet cell value is empty, then `A` and `B` *will* still be prepended and appended (which means you will get the concatenation `AB` as the returned result).  Single- and double-quote characters will be removed from the resulting string before it is returned or parsed as wikitext; this is necessary so that `A` and `B` can be strings with leading and trailing spaces (which you can do by putting quotes around the strings, like this: `append="' text'"`).
+If a value for the optional argument `ifempty` is supplied, and the spreadsheet cell to be returned is empty, only the value of `ifempty` is returned alone, without prepending `A` or appending `B`.  Conversely, if a value for `ifempty` is not supplied, and the spreadsheet cell value is empty, then `A` and `B` *will* still be prepended and appended (which means you will get the concatenation `AB` as the returned result for an empty cell).  Single- and double-quote characters will be removed from the resulting string before it is returned or parsed as wikitext; this is necessary so that `A` and `B` can be strings with leading and trailing spaces (which you can do by putting quotes around the strings, like this: `append="' text'"`).
 
-If the attribute `wikitext` is supplied, the entire string to be returned
-is first handed to the MediaWiki parser, and the result of that is what is
-returned.  The attribute `wikitext` takes no value.
+If the attribute `wikitext` is supplied, the entire string to be returned is first handed to the MediaWiki parser, and the result of *that* is what is actually returned.  The attribute `wikitext` takes no value.
 
-By default, this plug-in will make a single call to Google to get the entire table in one read, then do the cell value lookups internally in this plug-in.  Depending on the size of the spreadsheet, the speed of your server, and the number of uses of `<gscellvalue>` in a given MediaWiki page, this approach may be slower than doing two separate reads together with using the Google spreadsheets query API.  If the attribute `bigtable` is supplied, this plug-in will make two separate calls to Google rather than read the whole spreadsheet into memory in one call.
+By default, this plug-in will make a single call to Google to get the entire spreadsheet's contents in one read, then do the cell value lookups internally in this plug-in.  Depending on the size of the spreadsheet, the speed of your server, and the number of uses of `<gscellvalue>` in a given MediaWiki page, this approach may be slower than doing two separate reads together with using the Google spreadsheets query API.  If the attribute `bigtable` is supplied, this plug-in will make two separate calls to Google rather than read the whole spreadsheet into memory in one call.
 
 Note that string matches are performed in a case-*sensitive* manner.  (I.e., "Foo" is not considered to be the same as "foo".)
 
