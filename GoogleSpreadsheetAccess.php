@@ -83,7 +83,7 @@ $sheet_ids = array(
  * parser extension system.  It accepts arguments that indicate a row to find
  * in the spreadsheet, and once the row is found, the column value in that
  * row to be returned.  The approach is relatively simple and relies on one
- * important assumptions about the spreadsheet: that the first row consists
+ * important assumption about the spreadsheet: that the first row consists
  * of column labels.  References to rows in this extension are to these row
  * labels and NOT to the spreadsheet row ID's; this allows people to reorder
  * the spreadsheet columns without affecting references in MediaWiki pages.
