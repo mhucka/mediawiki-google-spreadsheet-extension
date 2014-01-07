@@ -25,7 +25,7 @@ Background
 
 In one of our projects, we maintain a large spreadsheet in Google Docs for tracking the status of different subprojects.  Most of the other public information about the subprojects, however, is maintained on our website, which is implemented using MediaWiki together with a custom skin and extensions.  We didn't want to manually copy data from that spreadsheet into the wiki pages because it would inevitably fall out of sync.  After searching and failing to find a MediaWiki plug-in to return values from a Google Docs spreadsheet, I implemented this solution.
 
-The *google-spreadsheet-mw-plugin* provides a tag, `<gcscellvalue>`, that can be used in wiki pages.  The tag takes arguments specifying a spreadsheet in Google Docs and a cell within that spreadsheet.  When the page is read, the tag returns the value of the spreadsheet cell, optionally doing some additional manipulations on the value.  The result is that you can write web pages that seamlessly integrate data and text automatically fetched directly from the spreadsheet.
+The *google-spreadsheet-mw-plugin* provides a tag, `<gscellvalue>`, that can be used in wiki pages.  The tag takes arguments specifying a spreadsheet in Google Docs and a cell within that spreadsheet.  When the page is read, the tag returns the value of the spreadsheet cell, optionally doing some additional manipulations on the value.  The result is that you can write web pages that seamlessly integrate data and text automatically fetched directly from the spreadsheet.
 
 
 Usage
@@ -45,15 +45,21 @@ Use the same procedure as you would to install any other MediaWiki plug-in.  For
 require_once( "$IP/extensions/google-spreadsheet-mw-plugin/GoogleSpreadsheetAccess.php");
 ~~~~~
 
+**3**. Add lines to your LocalSettings.php to configure the spreadsheet keys as explained in the next section.  For example, your LocalSettings.php file might look like this:
+    require_once( "$IP/extensions/GoogleSpreadsheetAccess/GoogleSpreadsheetAccess.php");
+    $wgGoogleSpreadsheetAccessIds = array(
+       "somesheet"  => "1da98545988975jkdf98562hkf89713al697ha9",
+       "othersheet" => "0da9328q2049gka87286hgwklsajfyq2346h982",
+
 
 ### Configuring the plug-in
 
-For security reasons, the plug-in does not allow you to reference spreadsheets directly from the tag in a wiki page.  (Doing so would allow anyone with write access to your wiki to insert potentially malicious constructs from spreadsheets they control.)  Instead, there is a level of indirection: on the server you define identifiers that are mapped to actual spreadsheets, and when you use the tag in a wiki page, you use the identifier to name the spreadsheet you want to access.  Thus, the maintainers of the wiki site controls which spreadsheets can be accessed.  (Of course, for this security measure to have any value, the maintainer of the wiki should also control write access to the spreadsheets.  If the maintainer of the wiki do not control write access to the spreadsheets, or worse, the spreadsheets are publicly writable, then this indirection offers no security at all.)
+For security reasons, the plug-in does not allow you to reference spreadsheets directly from the tag in a wiki page.  (Doing so would allow anyone with write access to your wiki to insert potentially malicious constructs from spreadsheets they control.)  Instead, there is a level of indirection: in your MediaWiki server configuration, you define identifiers that are mapped to actual spreadsheets, and when you use the tag in a wiki page, you use an identifier to name the spreadsheet you want to access.  Thus, the maintainers of the wiki site control which spreadsheets can be accessed.
 
-To configure the plug-in, edit the `$sheet_ids` variable near the top of the PHP file.  The format is
+To configure the plug-in, set the variable `$wgGoogleSpreadsheetAccessIds` in your LocalSettings.php file after loading the extension.  The format is
 
 ~~~~~php
-$sheet_ids = array(
+$wgGoogleSpreadsheetAccessIds = array(
    "sheet name" => "Google key for spreadsheet"
 );
 ~~~~~
@@ -67,7 +73,7 @@ https://spreadsheets.google.com/tq?key=045klja34aAKLjasdfLLLJlkasdf04aKL73zz
 Suppose you wanted to name the sheet **mysheet** when referencing it from your wiki pages.  If the above was the Google Docs URL for the spreadsheet, the following is an example of what the final setting in the PHP file would look like:
 
 ~~~~~php
-$sheet_ids = array(
+$wgGoogleSpreadsheetAccessIds = array(
    "mysheet" => "045klja34aAKLjasdfLLLJlkasdf04aKL73zz"
 );
 ~~~~~
@@ -77,6 +83,8 @@ Then in your wiki pages, references to **mysheet** would look like this:
 ~~~~~
 <gscellvalue sheet="mysheet" find="..." in="..." return="..." ...>
 ~~~~~
+
+(Of course, for this security measure to have any value, the maintainers of the wiki should also **control write access to the spreadsheets**.  If the maintainers of the wiki do not control write access to the spreadsheets, or worse, the spreadsheets are publicly writable, then this indirection offers no security at all.)
 
 
 ### Using the plug-in in wiki pages
