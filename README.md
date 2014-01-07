@@ -1,5 +1,5 @@
-mediawiki-google-spreadsheet-extension
-======================================
+GoogleSpreadSheetAccess
+=======================
 
 A [MediaWiki](http://www.mediawiki.org) extension for accessing values in a Google Spreadsheet.  It provides a tag you can insert into MediaWiki documents; each use of the tag can reference a cell in a Google Docs spreadsheet and return the value in that cell.
 
