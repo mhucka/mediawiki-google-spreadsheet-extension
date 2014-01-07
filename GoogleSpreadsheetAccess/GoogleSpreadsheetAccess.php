@@ -34,12 +34,13 @@
  */
 
 /*
- * Standard MediaWiki code to protect against register_globals vulnerabilities.
- * This line must be present before any global variable is referenced.
+ * Ensure that the script can't be executed outside of MediaWiki.
+ * See http://www.mediawiki.org/wiki/Security_checklist_for_developers
+ * for an explanation.
  */
 if (!defined('MEDIAWIKI')) {
     echo("This file is part of MediaWiki. It is not a valid entry point.\n");
-    die(-1);
+    exit(1);
 }
 
 global $wgExtensionCredits;
@@ -49,7 +50,7 @@ $wgExtensionCredits['other'][] = array(
     'author'      => 'Michael Hucka (mhucka@caltech.edu)',
     'url'         => 'http://mhucka.github.com/google-spreadsheet-mw-plugin',
     'description' => 'Return values from a Google Spreadsheet.',
-    'version'     => '1.0.0',
+    'version'     => '1.0.0-beta',
 );
 
 $wgExtensionFunctions[] = "wf_google_spreadsheet_include";
