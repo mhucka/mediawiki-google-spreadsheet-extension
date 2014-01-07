@@ -49,10 +49,11 @@ require_once( "$IP/extensions/mediawiki-google-spreadsheet-extension/GoogleSprea
 
 **3**. Add lines to your LocalSettings.php to configure the spreadsheet keys as explained in the next section.  For example, your LocalSettings.php file might look like this:
 ~~~~~php
-    require_once( "$IP/extensions/GoogleSpreadsheetAccess/GoogleSpreadsheetAccess.php");
-    $wgGoogleSpreadsheetAccessIds = array(
-       "somesheet"  => "1da98545988975jkdf98562hkf89713al697ha9",
-       "othersheet" => "0da9328q2049gka87286hgwklsajfyq2346h982",
+require_once( "$IP/extensions/GoogleSpreadsheetAccess/GoogleSpreadsheetAccess.php");
+$wgGoogleSpreadsheetAccessIds = array(
+    "somesheet"  => "1da98545988975jkdf98562hkf89713al697ha9",
+    "othersheet" => "0da9328q2049gka87286hgwklsajfyq2346h982",
+);
 ~~~~~
 
 
@@ -104,7 +105,7 @@ The page syntax for using `gscellvalue` in wiki text is the following:
 
 where the following arguments are required:
 
- `S` =  identifier for the spreadsheet (see `$sheet_ids` above) <br>
+ `S` =  identifier for the spreadsheet (see `$wgGoogleSpreadsheetAccessIds` above) <br>
  `X` =  exact string to look for in column `Y` to find a row <br>
  `Y` =  label of the column in which to search for content `X` <br>
  `Z` =  label of the column whose value is to be returned <br>
@@ -117,11 +118,11 @@ and the following arguments are optional:
  `wikitext` =  keyword indicating content is to be parsed before returning it <br>
  `bigtable` =  keyword indicating table is large, so don't read it all at once <br>
 
-If a value for the optional argument `ifempty` is supplied, and the spreadsheet cell to be returned is empty, only the value of `ifempty` is returned alone, without prepending `A` or appending `B`.  Conversely, if a value for `ifempty` is not supplied, and the spreadsheet cell value is empty, then `A` and `B` *will* still be prepended and appended (which means you will get the concatenation `AB` as the returned result for an empty cell).  Single- and double-quote characters will be removed from the resulting string before it is returned or parsed as wikitext; this is necessary so that `A` and `B` can be strings with leading and trailing spaces (which you can do by putting quotes around the strings, like this: `append="' text'"`).
+If a value for the optional argument `ifempty` is supplied, and the spreadsheet cell to be returned is empty, only the value `C` of `ifempty` will be returned alone.  The values `A` and `B` will not be prepended or appended.  Conversely, if a value for `ifempty` is *not* supplied, and the spreadsheet cell value is empty, then `A` and `B` *will* still be prepended and appended (which means you will get the concatenation `AB` as the returned result for an empty cell).  Single- and double-quote characters will be removed from the resulting string before it is returned or parsed as wikitext; this is necessary so that `A` and `B` can be strings with leading and trailing spaces (which you can do by putting quotes around the strings, like this: `append="' text'"`).
 
-If the attribute `wikitext` is supplied, the entire string to be returned is first handed to the MediaWiki parser, and the result of *that* is what is actually returned.  The attribute `wikitext` takes no value.
+If the attribute `wikitext` is supplied, the entire string to be returned is first handed to the MediaWiki parser, and the result of *that* is what is actually returned.  The attribute `wikitext` does not take a value.
 
-By default, this extension will make a single call to Google to get the entire spreadsheet's contents in one read, then do the cell value lookups internally in this extension.  Depending on the size of the spreadsheet, the speed of your server, and the number of uses of `<gscellvalue>` in a given MediaWiki page, this approach may be slower than doing two separate reads together with using the Google spreadsheets query API.  If the attribute `bigtable` is supplied, this extension will make two separate calls to Google rather than read the whole spreadsheet into memory in one call.
+By default, this extension will make a single call to Google to get the entire spreadsheet's contents in one read, then do the cell value lookups internally in this extension.  Depending on the size of the spreadsheet, the speed of your server, and the number of uses of `<gscellvalue>` in a given MediaWiki page, this approach may be slower than doing two separate reads together with using the Google spreadsheets query API.  If the attribute `bigtable` is supplied, this extension will make two separate calls to Google rather than read the whole spreadsheet into memory in one call.  The attribute `bigtable` does not take a value.
 
 Note that string matches are performed in a case-*sensitive* manner.  (I.e., "Foo" is not considered to be the same as "foo".)
 
