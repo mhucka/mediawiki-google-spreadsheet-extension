@@ -1,0 +1,1 @@
+- [ ] fix: the error strings returned by query_gs are lost
