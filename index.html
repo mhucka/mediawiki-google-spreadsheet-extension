@@ -78,10 +78,11 @@
 
 <p><strong>3</strong>. Add lines to your LocalSettings.php to configure the spreadsheet keys as explained in the next section.  For example, your LocalSettings.php file might look like this:</p>
 
-<div class="highlight highlight-php"><pre>    <span class="k">require_once</span><span class="p">(</span> <span class="s2">"</span><span class="si">$IP</span><span class="s2">/extensions/GoogleSpreadsheetAccess/GoogleSpreadsheetAccess.php"</span><span class="p">);</span>
-    <span class="nv">$wgGoogleSpreadsheetAccessIds</span> <span class="o">=</span> <span class="k">array</span><span class="p">(</span>
-       <span class="s2">"somesheet"</span>  <span class="o">=&gt;</span> <span class="s2">"1da98545988975jkdf98562hkf89713al697ha9"</span><span class="p">,</span>
-       <span class="s2">"othersheet"</span> <span class="o">=&gt;</span> <span class="s2">"0da9328q2049gka87286hgwklsajfyq2346h982"</span><span class="p">,</span>
+<div class="highlight highlight-php"><pre><span class="k">require_once</span><span class="p">(</span> <span class="s2">"</span><span class="si">$IP</span><span class="s2">/extensions/GoogleSpreadsheetAccess/GoogleSpreadsheetAccess.php"</span><span class="p">);</span>
+<span class="nv">$wgGoogleSpreadsheetAccessIds</span> <span class="o">=</span> <span class="k">array</span><span class="p">(</span>
+    <span class="s2">"somesheet"</span>  <span class="o">=&gt;</span> <span class="s2">"1da98545988975jkdf98562hkf89713al697ha9"</span><span class="p">,</span>
+    <span class="s2">"othersheet"</span> <span class="o">=&gt;</span> <span class="s2">"0da9328q2049gka87286hgwklsajfyq2346h982"</span><span class="p">,</span>
+<span class="p">);</span>
 </pre></div>
 
 <h3>
@@ -128,17 +129,17 @@
 
 <p>where the following arguments are required:</p>
 
-<p><code>S</code> =  identifier for the spreadsheet (see <code>$sheet_ids</code> above) <br><code>X</code> =  exact string to look for in column <code>Y</code> to find a row <br><code>Y</code> =  label of the column in which to search for content <code>X</code> <br><code>Z</code> =  label of the column whose value is to be returned <br></p>
+<p><code>S</code> =  identifier for the spreadsheet (see <code>$wgGoogleSpreadsheetAccessIds</code> above) <br><code>X</code> =  exact string to look for in column <code>Y</code> to find a row <br><code>Y</code> =  label of the column in which to search for content <code>X</code> <br><code>Z</code> =  label of the column whose value is to be returned <br></p>
 
 <p>and the following arguments are optional:</p>
 
 <p><code>A</code> =  text to prepend to the value returned <br><code>B</code> =  text to append to the value returned <br><code>C</code> =  value to return if the cell content is found to be empty <br><code>wikitext</code> =  keyword indicating content is to be parsed before returning it <br><code>bigtable</code> =  keyword indicating table is large, so don't read it all at once <br></p>
 
-<p>If a value for the optional argument <code>ifempty</code> is supplied, and the spreadsheet cell to be returned is empty, only the value of <code>ifempty</code> is returned alone, without prepending <code>A</code> or appending <code>B</code>.  Conversely, if a value for <code>ifempty</code> is not supplied, and the spreadsheet cell value is empty, then <code>A</code> and <code>B</code> <em>will</em> still be prepended and appended (which means you will get the concatenation <code>AB</code> as the returned result for an empty cell).  Single- and double-quote characters will be removed from the resulting string before it is returned or parsed as wikitext; this is necessary so that <code>A</code> and <code>B</code> can be strings with leading and trailing spaces (which you can do by putting quotes around the strings, like this: <code>append="' text'"</code>).</p>
+<p>If a value for the optional argument <code>ifempty</code> is supplied, and the spreadsheet cell to be returned is empty, only the value <code>C</code> of <code>ifempty</code> will be returned alone.  The values <code>A</code> and <code>B</code> will not be prepended or appended.  Conversely, if a value for <code>ifempty</code> is <em>not</em> supplied, and the spreadsheet cell value is empty, then <code>A</code> and <code>B</code> <em>will</em> still be prepended and appended (which means you will get the concatenation <code>AB</code> as the returned result for an empty cell).  Single- and double-quote characters will be removed from the resulting string before it is returned or parsed as wikitext; this is necessary so that <code>A</code> and <code>B</code> can be strings with leading and trailing spaces (which you can do by putting quotes around the strings, like this: <code>append="' text'"</code>).</p>
 
-<p>If the attribute <code>wikitext</code> is supplied, the entire string to be returned is first handed to the MediaWiki parser, and the result of <em>that</em> is what is actually returned.  The attribute <code>wikitext</code> takes no value.</p>
+<p>If the attribute <code>wikitext</code> is supplied, the entire string to be returned is first handed to the MediaWiki parser, and the result of <em>that</em> is what is actually returned.  The attribute <code>wikitext</code> does not take a value.</p>
 
-<p>By default, this extension will make a single call to Google to get the entire spreadsheet's contents in one read, then do the cell value lookups internally in this extension.  Depending on the size of the spreadsheet, the speed of your server, and the number of uses of <code>&lt;gscellvalue&gt;</code> in a given MediaWiki page, this approach may be slower than doing two separate reads together with using the Google spreadsheets query API.  If the attribute <code>bigtable</code> is supplied, this extension will make two separate calls to Google rather than read the whole spreadsheet into memory in one call.</p>
+<p>By default, this extension will make a single call to Google to get the entire spreadsheet's contents in one read, then do the cell value lookups internally in this extension.  Depending on the size of the spreadsheet, the speed of your server, and the number of uses of <code>&lt;gscellvalue&gt;</code> in a given MediaWiki page, this approach may be slower than doing two separate reads together with using the Google spreadsheets query API.  If the attribute <code>bigtable</code> is supplied, this extension will make two separate calls to Google rather than read the whole spreadsheet into memory in one call.  The attribute <code>bigtable</code> does not take a value.</p>
 
 <p>Note that string matches are performed in a case-<em>sensitive</em> manner.  (I.e., "Foo" is not considered to be the same as "foo".)</p>
 
