@@ -1,7 +1,7 @@
 google-spreadsheet-mw-plugin
 ============================
 
-A [MediaWiki](http://www.mediawiki.org) plug-in for accessing values in a Google Spreadsheet.  It provides a tag you can insert into MediaWiki documents; each use of the tag can reference a cell in a Google Docs spreadsheet and return the value in that cell.
+A [MediaWiki](http://www.mediawiki.org) extension for accessing values in a Google Spreadsheet.  It provides a tag you can insert into MediaWiki documents; each use of the tag can reference a cell in a Google Docs spreadsheet and return the value in that cell.
 
 ----
 *Author*: Michael Hucka (http://www.cds.caltech.edu/~mhucka)
@@ -16,14 +16,14 @@ A [MediaWiki](http://www.mediawiki.org) plug-in for accessing values in a Google
 Requirements
 ------------
 
-1. This is designed to work as a plug-in for MediaWiki.  It has so far only been tested and used with MediaWiki 1.11.
+1. This is designed to work as an extension for MediaWiki.  It has so far only been tested and used with MediaWiki 1.11.
 2. This relies on a JSON parser.  It was written to use the JSON PECL extension in PHP 5.1.6, but other json parsers would probably work with small modifications.
 
 
 Background
 ----------
 
-In one of our projects, we maintain a large spreadsheet in Google Docs for tracking the status of different subprojects.  Most of the other public information about the subprojects, however, is maintained on our website, which is implemented using MediaWiki together with a custom skin and extensions.  We didn't want to manually copy data from that spreadsheet into the wiki pages because it would inevitably fall out of sync.  After searching and failing to find a MediaWiki plug-in to return values from a Google Docs spreadsheet, I implemented this solution.
+In one of our projects, we maintain a large spreadsheet in Google Docs for tracking the status of different subprojects.  Most of the other public information about the subprojects, however, is maintained on our website, which is implemented using MediaWiki together with a custom skin and extensions.  We didn't want to manually copy data from that spreadsheet into the wiki pages because it would inevitably fall out of sync.  After searching and failing to find a MediaWiki extension to return values from a Google Docs spreadsheet, I implemented this solution.
 
 The *google-spreadsheet-mw-plugin* provides a tag, `<gscellvalue>`, that can be used in wiki pages.  The tag takes arguments specifying a spreadsheet in Google Docs and a cell within that spreadsheet.  When the page is read, the tag returns the value of the spreadsheet cell, optionally doing some additional manipulations on the value.  The result is that you can write web pages that seamlessly integrate data and text automatically fetched directly from the spreadsheet.
 
@@ -31,11 +31,11 @@ The *google-spreadsheet-mw-plugin* provides a tag, `<gscellvalue>`, that can be 
 Usage
 -----
 
-There are three parts to using this.  First, you need to add the plug-in to your MediaWiki installation.  Second, you need to configure it to be able to access one or more spreadsheets in Google Docs.  Third, you need to write wiki pages that use the tag provided by the plug-in.
+There are three parts to using this.  First, you need to add the extension to your MediaWiki installation.  Second, you need to configure it to be able to access one or more spreadsheets in Google Docs.  Third, you need to write wiki pages that use the tag provided by the extension.
 
-### Installing the plug-in
+### Installing the extension
 
-Use the same procedure as you would to install any other MediaWiki plug-in.  For our MediaWiki installation, it was simply as follows:
+Use the same procedure as you would to install any other MediaWiki extension.  For our MediaWiki installation, it was simply as follows:
 
 **1**. Copy the PHP file to the `extensions` subdirectory in your MediaWiki installation.
 
@@ -54,11 +54,11 @@ require_once( "$IP/extensions/google-spreadsheet-mw-plugin/GoogleSpreadsheetAcce
 ~~~~~
 
 
-### Configuring the plug-in
+### Configuring the extension
 
-For security reasons, the plug-in does not allow you to reference spreadsheets directly from the tag in a wiki page.  (Doing so would allow anyone with write access to your wiki to insert potentially malicious constructs from spreadsheets they control.)  Instead, there is a level of indirection: in your MediaWiki server configuration, you define identifiers that are mapped to actual spreadsheets, and when you use the tag in a wiki page, you use an identifier to name the spreadsheet you want to access.  Thus, the maintainers of the wiki site control which spreadsheets can be accessed.
+For security reasons, the extension does not allow you to reference spreadsheets directly from the tag in a wiki page.  (Doing so would allow anyone with write access to your wiki to insert potentially malicious constructs from spreadsheets they control.)  Instead, there is a level of indirection: in your MediaWiki server configuration, you define identifiers that are mapped to actual spreadsheets, and when you use the tag in a wiki page, you use one of the identifiers to name the particular spreadsheet you want to access.
 
-To configure the plug-in, set the variable `$wgGoogleSpreadsheetAccessIds` in your LocalSettings.php file after loading the extension.  The format is
+To configure the extension, set the variable `$wgGoogleSpreadsheetAccessIds` in your LocalSettings.php file after loading the extension.  The format is
 
 ~~~~~php
 $wgGoogleSpreadsheetAccessIds = array(
@@ -89,7 +89,7 @@ Then in your wiki pages, references to **mysheet** would look like this:
 (Of course, for this security measure to have any value, the maintainers of the wiki should also **control write access to the spreadsheets**.  If the maintainers of the wiki do not control write access to the spreadsheets, or worse, the spreadsheets are publicly writable, then this indirection offers no security at all.)
 
 
-### Using the plug-in in wiki pages
+### Using the extension in wiki pages
 
 When used in a wiki page, `<gscellvalue>` accepts arguments that indicate a row to find in the spreadsheet and the column within that row.  The content of the cell identified by that row/column combination is returned.  The indexing approach relies on one important assumption about the spreadsheet: that the **first row consists of column labels**.  References to "rows" in this extension are to these row labels and **not** to the spreadsheet's own row identifiers&mdash;in other words, **not** to the "A", "B", "C", .... "AA", "AB", etc., provided by the spreadsheet, but rather to row labels that the spreadsheet author provides.  This approach is crucial to allowing you to reorder the spreadsheet columns without affecting column references in MediaWiki pages.
 
@@ -119,7 +119,7 @@ If a value for the optional argument `ifempty` is supplied, and the spreadsheet 
 
 If the attribute `wikitext` is supplied, the entire string to be returned is first handed to the MediaWiki parser, and the result of *that* is what is actually returned.  The attribute `wikitext` takes no value.
 
-By default, this plug-in will make a single call to Google to get the entire spreadsheet's contents in one read, then do the cell value lookups internally in this plug-in.  Depending on the size of the spreadsheet, the speed of your server, and the number of uses of `<gscellvalue>` in a given MediaWiki page, this approach may be slower than doing two separate reads together with using the Google spreadsheets query API.  If the attribute `bigtable` is supplied, this plug-in will make two separate calls to Google rather than read the whole spreadsheet into memory in one call.
+By default, this extension will make a single call to Google to get the entire spreadsheet's contents in one read, then do the cell value lookups internally in this extension.  Depending on the size of the spreadsheet, the speed of your server, and the number of uses of `<gscellvalue>` in a given MediaWiki page, this approach may be slower than doing two separate reads together with using the Google spreadsheets query API.  If the attribute `bigtable` is supplied, this extension will make two separate calls to Google rather than read the whole spreadsheet into memory in one call.
 
 Note that string matches are performed in a case-*sensitive* manner.  (I.e., "Foo" is not considered to be the same as "foo".)
 
