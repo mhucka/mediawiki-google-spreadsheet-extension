@@ -53,31 +53,38 @@ $wgExtensionCredits['other'][] = array(
     'version'     => '1.0.0-beta',
 );
 
-$wgExtensionFunctions[] = "wf_google_spreadsheet_include";
+$wgExtensionFunctions[] = "wfGoogleSpreadsheetAccessSetup";
 
 /**
  * Hooks this extension into the MediaWiki parser.
  */
-function wf_google_spreadsheet_include() {
+function wfGoogleSpreadsheetAccessSetup() {
     global $wgParser;
     $wgParser->setHook( "gscellvalue", "render_gscellvalue" );
 }
 
 /*
- * For security reasons, you must hard-code the spreadsheet key here, and
- * use identifiers in the references in your wiki pages, rather than use
- * the spreadsheet key directly in the wiki pages.  The format of the
- * following array is:
+ * For security reasons, you must hard-code spreadsheet keys in your
+ * LocalSettings.php.  Each key must map to an actual Google spreadsheet
+ * unique identifier; then, in your wiki content, you use the key rather than
+ * the actual spreadsheet identifier directly.  This indirection is for
+ * security reasons, to avoid wiki users being able to inject malicious
+ * content from arbitrary spreadsheets when calling <gscellvalue>.
  *
+ * The format of the following array is:
  *    "sheet name" => "Google key for spreadsheet"
  *
- * This indirection is for security reasons, to avoid wiki users being able
- * to inject malicious content from arbitrary spreadsheets that they control.
+ * Set the value in your LocalSettings.php file, after loading this
+ * extension.  For example, your LocalSettings.php file might look like this:
+ *
+ * require_once( "$IP/extensions/GoogleSpreadsheetAccess/GoogleSpreadsheetAccess.php");
+ * $wgGoogleSpreadsheetAccessIds = array(
+ *    "somesheet"  => "1da98545988975jkdf98562hkf89713al697ha9",
+ *    "othersheet" => "0da9328q2049gka87286hgwklsajfyq2346h982",
+ * );
  */
 
-$sheet_ids = array(
-    "SBMLLevel3Packages" => "0ApbKgxVhXxVydG15WXlIT0JacHhwc0FPemV6bE1aQXc",
-);
+$wgGoogleSpreadsheetAccessIds = array();
 
 /*
  * Function render_gscellvalue will be called automatically by the MediaWiki
@@ -96,7 +103,7 @@ $sheet_ids = array(
  *              prepend="A" append="B" ifempty="C" wikitext bigtable>
  *
  * where the following are required:
- *   S = name for the spreadsheet (see $sheet_ids above)
+ *   S = name for the spreadsheet (see $wgGoogleSpreadsheetAccessIds above)
  *   X = exact string to look for in column "Y", to find a row
  *   Y = label (not ID) of the column in which to search for content "X"
  *   Z = label (not ID) of the column whose value is to be returned
@@ -136,7 +143,7 @@ $sheet_ids = array(
 function render_gscellvalue( $input , $argv, &$parser ) {
     wfProfileIn( "gscellvalue" );
 
-    global $sheet_ids;
+    global $wgGoogleSpreadsheetAccessIds;
     $sheet_key  = "";
     $sheet      = isset($argv["sheet"])   ? $argv["sheet"]   : "";
     $find       = isset($argv["find"])    ? $argv["find"]    : "";
@@ -150,10 +157,10 @@ function render_gscellvalue( $input , $argv, &$parser ) {
 
     if (empty($sheet)) {
         return "ERROR: &lt;gscellvalue&gt; is missing 'sheet' attribute.";
-    } elseif ( !array_key_exists($sheet, $sheet_ids) ) {
+    } elseif ( !array_key_exists($sheet, $wgGoogleSpreadsheetAccessIds) ) {
         return "ERROR: unknown sheet name '" . $sheet . "'";
     } else {
-        $sheet_key = $sheet_ids[$sheet];
+        $sheet_key = $wgGoogleSpreadsheetAccessIds[$sheet];
     }
     if (empty($find)) {
         return "ERROR: &lt;gscellvalue&gt; missing 'find' attribute.";
