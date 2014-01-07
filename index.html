@@ -1,1 +1,194 @@
-My Github page.
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <link href='https://fonts.googleapis.com/css?family=Chivo:900' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="stylesheets/pygment_trac.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print" />
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <title>GoogleSpreadSheetAccess by mhucka</title>
+  </head>
+
+  <body>
+    <div id="container">
+      <div class="inner">
+
+        <header>
+          <h1>GoogleSpreadSheetAccess</h1>
+          <h2>MediaWiki plug-in for accessing values in a Google Spreadsheet</h2>
+        </header>
+
+        <section id="downloads" class="clearfix">
+          <a href="https://github.com/mhucka/mediawiki-google-spreadsheet-extension/zipball/master" id="download-zip" class="button"><span>Download .zip</span></a>
+          <a href="https://github.com/mhucka/mediawiki-google-spreadsheet-extension/tarball/master" id="download-tar-gz" class="button"><span>Download .tar.gz</span></a>
+          <a href="https://github.com/mhucka/mediawiki-google-spreadsheet-extension" id="view-on-github" class="button"><span>View on GitHub</span></a>
+        </section>
+
+        <hr>
+
+        <section id="main_content">
+          <h1>
+<a name="googlespreadsheetaccess" class="anchor" href="#googlespreadsheetaccess"><span class="octicon octicon-link"></span></a>GoogleSpreadSheetAccess</h1>
+
+<p>A <a href="http://www.mediawiki.org">MediaWiki</a> extension for accessing values in a Google Spreadsheet.  It provides a tag you can insert into MediaWiki documents; each use of the tag can reference a cell in a Google Docs spreadsheet and return the value in that cell.</p>
+
+<hr><p><em>Author</em>: Michael Hucka (<a href="http://www.cds.caltech.edu/%7Emhucka">http://www.cds.caltech.edu/~mhucka</a>)</p>
+
+<p><em>Copyright</em>: Copyright (C) 2012-2014 by the California Institute of Technology, Pasadena, USA.</p>
+
+<p><em>License</em>: This code is licensed under the LGPL version 2.1.  Please see the Please see the file <a href="https://raw.github.com/mhucka/mediawiki-google-spreadsheet-extension/master/COPYING.txt">../COPYING.txt</a> for details.</p>
+
+<p><em>Repository</em>: <a href="https://github.com/mhucka/">https://github.com/mhucka/</a></p>
+
+<h2>
+<a name="requirements" class="anchor" href="#requirements"><span class="octicon octicon-link"></span></a>Requirements</h2>
+
+<ol>
+<li>This is designed to work as an extension for MediaWiki.  It has so far only been tested and used with MediaWiki 1.11.</li>
+<li>This relies on a JSON parser.  It was written to use the JSON PECL extension in PHP 5.1.6, but other json parsers would probably work with small modifications.</li>
+</ol><h2>
+<a name="background" class="anchor" href="#background"><span class="octicon octicon-link"></span></a>Background</h2>
+
+<p>In one of our projects, we maintain a large spreadsheet in Google Docs for tracking the status of different subprojects.  Most of the other public information about the subprojects, however, is maintained on our website, which is implemented using MediaWiki together with a custom skin and extensions.  We didn't want to manually copy data from that spreadsheet into the wiki pages because it would inevitably fall out of sync.  After searching and failing to find a MediaWiki extension to return values from a Google Docs spreadsheet, I implemented this solution.</p>
+
+<p>The <em>mediawiki-google-spreadsheet-extension</em> provides a tag, <code>&lt;gscellvalue&gt;</code>, that can be used in wiki pages.  The tag takes arguments specifying a spreadsheet in Google Docs and a cell within that spreadsheet.  When the page is read, the tag returns the value of the spreadsheet cell, optionally doing some additional manipulations on the value.  The result is that you can write web pages that seamlessly integrate data and text automatically fetched directly from the spreadsheet.</p>
+
+<h2>
+<a name="usage" class="anchor" href="#usage"><span class="octicon octicon-link"></span></a>Usage</h2>
+
+<p>There are three parts to using this.  First, you need to add the extension to your MediaWiki installation.  Second, you need to configure it to be able to access one or more spreadsheets in Google Docs.  Third, you need to write wiki pages that use the tag provided by the extension.</p>
+
+<h3>
+<a name="installing-the-extension" class="anchor" href="#installing-the-extension"><span class="octicon octicon-link"></span></a>Installing the extension</h3>
+
+<p>Use the same procedure as you would to install any other MediaWiki extension.  For our MediaWiki installation, it was simply as follows:</p>
+
+<p><strong>1</strong>. Copy the PHP file to the <code>extensions</code> subdirectory in your MediaWiki installation.</p>
+
+<p><strong>2</strong>. Add a line to your LocalSettings.php file to load the PHP file. For example, here is what it looks like for our system:</p>
+
+<div class="highlight highlight-php"><pre><span class="k">require_once</span><span class="p">(</span> <span class="s2">"</span><span class="si">$IP</span><span class="s2">/extensions/mediawiki-google-spreadsheet-extension/GoogleSpreadsheetAccess.php"</span><span class="p">);</span>
+</pre></div>
+
+<p><strong>3</strong>. Add lines to your LocalSettings.php to configure the spreadsheet keys as explained in the next section.  For example, your LocalSettings.php file might look like this:</p>
+
+<div class="highlight highlight-php"><pre>    <span class="k">require_once</span><span class="p">(</span> <span class="s2">"</span><span class="si">$IP</span><span class="s2">/extensions/GoogleSpreadsheetAccess/GoogleSpreadsheetAccess.php"</span><span class="p">);</span>
+    <span class="nv">$wgGoogleSpreadsheetAccessIds</span> <span class="o">=</span> <span class="k">array</span><span class="p">(</span>
+       <span class="s2">"somesheet"</span>  <span class="o">=&gt;</span> <span class="s2">"1da98545988975jkdf98562hkf89713al697ha9"</span><span class="p">,</span>
+       <span class="s2">"othersheet"</span> <span class="o">=&gt;</span> <span class="s2">"0da9328q2049gka87286hgwklsajfyq2346h982"</span><span class="p">,</span>
+</pre></div>
+
+<h3>
+<a name="configuring-the-extension" class="anchor" href="#configuring-the-extension"><span class="octicon octicon-link"></span></a>Configuring the extension</h3>
+
+<p>For security reasons, the extension does not allow you to reference spreadsheets directly from the tag in a wiki page.  (Doing so would allow anyone with write access to your wiki to insert potentially malicious constructs from spreadsheets they control.)  Instead, there is a level of indirection: in your MediaWiki server configuration, you define identifiers that are mapped to actual spreadsheets, and when you use the tag in a wiki page, you use one of the identifiers to name the particular spreadsheet you want to access.</p>
+
+<p>To configure the extension, set the variable <code>$wgGoogleSpreadsheetAccessIds</code> in your LocalSettings.php file after loading the extension.  The format is</p>
+
+<div class="highlight highlight-php"><pre><span class="nv">$wgGoogleSpreadsheetAccessIds</span> <span class="o">=</span> <span class="k">array</span><span class="p">(</span>
+   <span class="s2">"sheet name"</span> <span class="o">=&gt;</span> <span class="s2">"Google key for spreadsheet"</span>
+<span class="p">);</span>
+</pre></div>
+
+<p>For each <em>"sheet name"</em>, create an identifier that you want to use in the references in your wiki pages.  To find the <em>"Google key for spreadsheet"</em> part, look at the URL of your Google Docs spreadsheet and find the part after the <code>key=</code> keyword.  It will look something like the following:</p>
+
+<pre><code>https://spreadsheets.google.com/tq?key=045klja34aAKLjasdfLLLJlkasdf04aKL73zz
+</code></pre>
+
+<p>Suppose you wanted to name the sheet <strong>mysheet</strong> when referencing it from your wiki pages.  If the above was the Google Docs URL for the spreadsheet, the following is an example of what the final setting in the PHP file would look like:</p>
+
+<div class="highlight highlight-php"><pre><span class="nv">$wgGoogleSpreadsheetAccessIds</span> <span class="o">=</span> <span class="k">array</span><span class="p">(</span>
+   <span class="s2">"mysheet"</span> <span class="o">=&gt;</span> <span class="s2">"045klja34aAKLjasdfLLLJlkasdf04aKL73zz"</span>
+<span class="p">);</span>
+</pre></div>
+
+<p>Then in your wiki pages, references to <strong>mysheet</strong> would look like this:</p>
+
+<pre><code>&lt;gscellvalue sheet="mysheet" find="..." in="..." return="..." ...&gt;
+</code></pre>
+
+<p>(Of course, for this security measure to have any value, the maintainers of the wiki should also <strong>control write access to the spreadsheets</strong>.  If the maintainers of the wiki do not control write access to the spreadsheets, or worse, the spreadsheets are publicly writable, then this indirection offers no security at all.)</p>
+
+<h3>
+<a name="using-the-extension-in-wiki-pages" class="anchor" href="#using-the-extension-in-wiki-pages"><span class="octicon octicon-link"></span></a>Using the extension in wiki pages</h3>
+
+<p>When used in a wiki page, <code>&lt;gscellvalue&gt;</code> accepts arguments that indicate a row to find in the spreadsheet and the column within that row.  The content of the cell identified by that row/column combination is returned.  The indexing approach relies on one important assumption about the spreadsheet: that the <strong>first row consists of column labels</strong>.  References to "rows" in this extension are to these row labels and <strong>not</strong> to the spreadsheet's own row identifiers—in other words, <strong>not</strong> to the "A", "B", "C", .... "AA", "AB", etc., provided by the spreadsheet, but rather to row labels that the spreadsheet author provides.  This approach is crucial to allowing you to reorder the spreadsheet columns without affecting column references in MediaWiki pages.</p>
+
+<p>The page syntax for using <code>gscellvalue</code> in wiki text is the following:</p>
+
+<pre><code>&lt;gscellvalue sheet="S" find="X" in="Y" return="Z" 
+             prepend="A" append="B" ifempty="C" wikitext bigtable&gt;
+</code></pre>
+
+<p>where the following arguments are required:</p>
+
+<p><code>S</code> =  identifier for the spreadsheet (see <code>$sheet_ids</code> above) <br><code>X</code> =  exact string to look for in column <code>Y</code> to find a row <br><code>Y</code> =  label of the column in which to search for content <code>X</code> <br><code>Z</code> =  label of the column whose value is to be returned <br></p>
+
+<p>and the following arguments are optional:</p>
+
+<p><code>A</code> =  text to prepend to the value returned <br><code>B</code> =  text to append to the value returned <br><code>C</code> =  value to return if the cell content is found to be empty <br><code>wikitext</code> =  keyword indicating content is to be parsed before returning it <br><code>bigtable</code> =  keyword indicating table is large, so don't read it all at once <br></p>
+
+<p>If a value for the optional argument <code>ifempty</code> is supplied, and the spreadsheet cell to be returned is empty, only the value of <code>ifempty</code> is returned alone, without prepending <code>A</code> or appending <code>B</code>.  Conversely, if a value for <code>ifempty</code> is not supplied, and the spreadsheet cell value is empty, then <code>A</code> and <code>B</code> <em>will</em> still be prepended and appended (which means you will get the concatenation <code>AB</code> as the returned result for an empty cell).  Single- and double-quote characters will be removed from the resulting string before it is returned or parsed as wikitext; this is necessary so that <code>A</code> and <code>B</code> can be strings with leading and trailing spaces (which you can do by putting quotes around the strings, like this: <code>append="' text'"</code>).</p>
+
+<p>If the attribute <code>wikitext</code> is supplied, the entire string to be returned is first handed to the MediaWiki parser, and the result of <em>that</em> is what is actually returned.  The attribute <code>wikitext</code> takes no value.</p>
+
+<p>By default, this extension will make a single call to Google to get the entire spreadsheet's contents in one read, then do the cell value lookups internally in this extension.  Depending on the size of the spreadsheet, the speed of your server, and the number of uses of <code>&lt;gscellvalue&gt;</code> in a given MediaWiki page, this approach may be slower than doing two separate reads together with using the Google spreadsheets query API.  If the attribute <code>bigtable</code> is supplied, this extension will make two separate calls to Google rather than read the whole spreadsheet into memory in one call.</p>
+
+<p>Note that string matches are performed in a case-<em>sensitive</em> manner.  (I.e., "Foo" is not considered to be the same as "foo".)</p>
+
+<p>Other attributes supplied to <code>&lt;gscellvalue&gt;</code> are silently ignored.</p>
+
+<h2>
+<a name="history-and-acknowledgments" class="anchor" href="#history-and-acknowledgments"><span class="octicon octicon-link"></span></a>History and acknowledgments</h2>
+
+<p>This code was written for the SBML project website (<a href="http://sbml.org">http://sbml.org</a>) under funding from grant R01GM070923 (Principal Investigator: Dr. Michael Hucka) from the National Institute of General Medical Sciences (USA) to the California Institute of Technology.  The first version was written and deployed in mid-2012.</p>
+
+<h2>
+<a name="contributing" class="anchor" href="#contributing"><span class="octicon octicon-link"></span></a>Contributing</h2>
+
+<p>I welcome improvements of all kinds, to the code and to the documentation.
+Please feel free to contact me or do the following:</p>
+
+<ol>
+<li>Fork this repo.  See the links at the top of the github page.</li>
+<li>Create your feature branch (<code>git checkout -b my-new-feature</code>) and write
+your changes to the code or documentation.</li>
+<li>Commit your changes (<code>git commit -am 'Describe your changes here'</code>).</li>
+<li>Push to the branch (<code>git push origin my-new-feature</code>).</li>
+<li>Create a new pull request to notify me of your suggested changes.</li>
+</ol><h2>
+<a name="license" class="anchor" href="#license"><span class="octicon octicon-link"></span></a>License</h2>
+
+<p>Copyright (C) 2012-2014 by the California Institute of Technology, Pasadena, USA.</p>
+
+<p>This library is free software; you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation; either version 2.1 of the License, or any later version.</p>
+
+<p>This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.  The software and documentation provided hereunder is on an "as is" basis, and the California Institute of Technology has no obligations to provide maintenance, support, updates, enhancements or modifications.  In no event shall the California Institute of Technology be liable to any party for direct, indirect, special, incidental or consequential damages, including lost profits, arising out of the use of this software and its documentation, even if the California Institute of Technology has been advised of the possibility of such damage.  See the GNU Lesser General Public License for more details.</p>
+
+<p>You should have received a copy of the GNU Lesser General Public License along with this library in the file named "COPYING.txt" included with the software distribution.</p>
+        </section>
+
+        <footer>
+          GoogleSpreadSheetAccess is maintained by <a href="https://github.com/mhucka">mhucka</a><br>
+          This page was generated by <a href="http://pages.github.com">GitHub Pages</a>. Tactile theme by <a href="https://twitter.com/jasonlong">Jason Long</a>.
+        </footer>
+
+                  <script type="text/javascript">
+            var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+            document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+          </script>
+          <script type="text/javascript">
+            try {
+              var pageTracker = _gat._getTracker("UA-27668668-6");
+            pageTracker._trackPageview();
+            } catch(err) {}
+          </script>
+
+      </div>
+    </div>
+  </body>
+</html>
