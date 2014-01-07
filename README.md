@@ -1,5 +1,5 @@
-google-spreadsheet-mw-plugin
-============================
+mediawiki-google-spreadsheet-extension
+======================================
 
 A [MediaWiki](http://www.mediawiki.org) extension for accessing values in a Google Spreadsheet.  It provides a tag you can insert into MediaWiki documents; each use of the tag can reference a cell in a Google Docs spreadsheet and return the value in that cell.
 
@@ -8,9 +8,9 @@ A [MediaWiki](http://www.mediawiki.org) extension for accessing values in a Goog
 
 *Copyright*: Copyright (C) 2012-2014 by the California Institute of Technology, Pasadena, USA.
 
-*License*: This code is licensed under the LGPL version 2.1.  Please see the Please see the file [../COPYING.txt](https://raw.github.com/mhucka/google-spreadsheet-mw-plugin/master/COPYING.txt) for details.
+*License*: This code is licensed under the LGPL version 2.1.  Please see the Please see the file [../COPYING.txt](https://raw.github.com/mhucka/mediawiki-google-spreadsheet-extension/master/COPYING.txt) for details.
 
-*Repository*: https://github.com/mhucka/google-spreadsheet-mw-plugin
+*Repository*: https://github.com/mhucka/
 
 
 Requirements
@@ -25,7 +25,7 @@ Background
 
 In one of our projects, we maintain a large spreadsheet in Google Docs for tracking the status of different subprojects.  Most of the other public information about the subprojects, however, is maintained on our website, which is implemented using MediaWiki together with a custom skin and extensions.  We didn't want to manually copy data from that spreadsheet into the wiki pages because it would inevitably fall out of sync.  After searching and failing to find a MediaWiki extension to return values from a Google Docs spreadsheet, I implemented this solution.
 
-The *google-spreadsheet-mw-plugin* provides a tag, `<gscellvalue>`, that can be used in wiki pages.  The tag takes arguments specifying a spreadsheet in Google Docs and a cell within that spreadsheet.  When the page is read, the tag returns the value of the spreadsheet cell, optionally doing some additional manipulations on the value.  The result is that you can write web pages that seamlessly integrate data and text automatically fetched directly from the spreadsheet.
+The *mediawiki-google-spreadsheet-extension* provides a tag, `<gscellvalue>`, that can be used in wiki pages.  The tag takes arguments specifying a spreadsheet in Google Docs and a cell within that spreadsheet.  When the page is read, the tag returns the value of the spreadsheet cell, optionally doing some additional manipulations on the value.  The result is that you can write web pages that seamlessly integrate data and text automatically fetched directly from the spreadsheet.
 
 
 Usage
@@ -42,7 +42,7 @@ Use the same procedure as you would to install any other MediaWiki extension.  F
 **2**. Add a line to your LocalSettings.php file to load the PHP file. For example, here is what it looks like for our system:
 
 ~~~~~php
-require_once( "$IP/extensions/google-spreadsheet-mw-plugin/GoogleSpreadsheetAccess.php");
+require_once( "$IP/extensions/mediawiki-google-spreadsheet-extension/GoogleSpreadsheetAccess.php");
 ~~~~~
 
 **3**. Add lines to your LocalSettings.php to configure the spreadsheet keys as explained in the next section.  For example, your LocalSettings.php file might look like this:
