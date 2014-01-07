@@ -64,12 +64,12 @@ function wfGoogleSpreadsheetAccessSetup() {
 }
 
 /*
- * For security reasons, you must hard-code spreadsheet keys in your
- * LocalSettings.php.  Each key must map to an actual Google spreadsheet
- * unique identifier; then, in your wiki content, you use the key rather than
- * the actual spreadsheet identifier directly.  This indirection is for
- * security reasons, to avoid wiki users being able to inject malicious
- * content from arbitrary spreadsheets when calling <gscellvalue>.
+ * For security reasons, you must hard-code spreadsheet identifiers in your
+ * LocalSettings.php.  Each identifier must map to an actual Google
+ * spreadsheet; then, in your wiki content, you use this internal identifier
+ * rather than the actual spreadsheet identifier directly.  This indirection
+ * is for security reasons, to avoid wiki users being able to inject
+ * malicious content from arbitrary spreadsheets when calling <gscellvalue>.
  *
  * The format of the following array is:
  *    "sheet name" => "Google key for spreadsheet"
