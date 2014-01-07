@@ -46,10 +46,12 @@ require_once( "$IP/extensions/google-spreadsheet-mw-plugin/GoogleSpreadsheetAcce
 ~~~~~
 
 **3**. Add lines to your LocalSettings.php to configure the spreadsheet keys as explained in the next section.  For example, your LocalSettings.php file might look like this:
+~~~~~php
     require_once( "$IP/extensions/GoogleSpreadsheetAccess/GoogleSpreadsheetAccess.php");
     $wgGoogleSpreadsheetAccessIds = array(
        "somesheet"  => "1da98545988975jkdf98562hkf89713al697ha9",
        "othersheet" => "0da9328q2049gka87286hgwklsajfyq2346h982",
+~~~~~
 
 
 ### Configuring the plug-in
