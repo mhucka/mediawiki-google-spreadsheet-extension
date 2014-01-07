@@ -5,7 +5,7 @@
  * @brief   MediaWiki plug-in for accessing values in a Google Spreadsheet
  * @author  Michael Hucka (mhucka@caltech.edu), Caltech
  *
- * See http://mhucka.github.com/mediawiki-google-spreadsheet-extension for
+ * See http://mhucka.github.io/mediawiki-google-spreadsheet-extension for
  * more info.
  *
  * This plug-in was developed as part of the SBML Project (http://sbml.org).
@@ -49,7 +49,7 @@ $wgExtensionCredits['other'][] = array(
     'path'        => __FILE__,
     'name'        => 'GoogleSpreadsheetAccess',
     'author'      => 'Michael Hucka (mhucka@caltech.edu)',
-    'url'         => 'http://mhucka.github.com/mediawiki-google-spreadsheet-extension',
+    'url'         => 'http://mhucka.github.io/mediawiki-google-spreadsheet-extension',
     'description' => 'Return values from a Google Spreadsheet.',
     'version'     => '1.0.0-beta',
 );
