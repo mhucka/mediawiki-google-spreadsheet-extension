@@ -141,7 +141,7 @@ $wgGoogleSpreadsheetAccessIds = array();
  *
  * Other attributes supplied to gscellvalue are silently ignored.
  */
-function render_gscellvalue( $input , $argv, &$parser ) {
+function render_gscellvalue( $input , $argv, $parser ) {
     wfProfileIn( "gscellvalue" );
 
     global $wgGoogleSpreadsheetAccessIds;
